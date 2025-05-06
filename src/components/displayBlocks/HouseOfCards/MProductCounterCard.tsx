@@ -9,9 +9,10 @@ import {Counter} from '@commonComponents';
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'white',
     width: '100%',
     padding: 4,
+    maxHeight: 116,
   },
   contentRow: {
     flexDirection: 'row',
@@ -114,7 +115,6 @@ const MProductCounterCard = ({
     subtract: Function;
   };
 }) => {
-
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 

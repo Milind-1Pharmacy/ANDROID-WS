@@ -481,9 +481,9 @@ const CartControlPanel = memo(
                       <TouchableOpacity
                         onPress={shippingDetailsCollapsed ? expand : collapse}>
                         {!shippingDetailsCollapsed ? (
-                          <FontAwesomeIcon icon={faAnglesDown} />
+                          <FontAwesomeIcon icon={faAnglesDown} size={16} />
                         ) : (
-                          <FontAwesomeIcon icon={faAnglesUp} />
+                          <FontAwesomeIcon icon={faAnglesUp} size={16} />
                         )}
                       </TouchableOpacity>
                     </HStack>

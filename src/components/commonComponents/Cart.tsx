@@ -1,14 +1,6 @@
-import P1Styles from '@P1StyleSheet';
+import React, {useContext, useState} from 'react';
+import {Dimensions, StyleSheet} from 'react-native';
 import {
-  APIContext,
-  AuthContext,
-  FormStateContext,
-  ToastContext,
-  useIsPickupMode,
-} from '@contextProviders';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import {
-  Divider,
   FlatList,
   HStack,
   IconButton,
@@ -17,14 +9,32 @@ import {
   Text,
   VStack,
   View,
+  Divider,
 } from 'native-base';
-import React, {useContext, useState} from 'react';
-import {Dimensions, Platform, StyleSheet} from 'react-native';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {
+  faCartPlus,
+  faTrashAlt,
+  faArrowLeft,
+} from '@fortawesome/free-solid-svg-icons';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import {Buffer} from 'buffer';
+
+// Contexts
+import {
+  APIContext,
+  AuthContext,
+  FormStateContext,
+  ToastContext,
+  useIsPickupMode,
+} from '@contextProviders';
+
+// Constants
 import {RUPEE_SYMBOL, UserRole, UserRoleAlias} from '@Constants';
 import {getURL} from '@APIRepository';
 import {ToastProfiles} from '@ToastProfiles';
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import {uploadToServer} from '@fileHandler';
+
+// Helpers
 import {
   extensionFromBase64,
   getCartTotalCalculator,
@@ -34,17 +44,18 @@ import {
   placeOrderAPIKey,
   parseError,
 } from '@helpers';
-import {Buffer} from 'buffer';
+
+// Components
 import InfoScreen from './InfoScreen';
 import Counter from './Counter';
 import CartControlPanel from './CartControlPanel';
 import P1AlertDialog from './P1AlertDialog';
-import {faCartPlus} from '@fortawesome/free-solid-svg-icons';
+
+// Utils
+import {uploadToServer} from '@fileHandler';
 import {useContextSelector} from 'use-context-selector';
 
-const {width: screenWidth, height} = Dimensions.get('window');
-
-const isDesktop = Platform.OS === 'web' && screenWidth > height;
+const {width: screenWidth} = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   header: {
@@ -53,16 +64,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginVertical: 15,
+    backgroundColor: '#2E6ACF',
   },
   contentBase: {
     flex: 1,
-    width: isDesktop ? '99%' : '100%',
+    width: '100%',
     borderTopRightRadius: 20,
     borderTopLeftRadius: 20,
     backgroundColor: '#FFFFFF',
     justifyContent: 'flex-end',
-    marginHorizontal: isDesktop ? 10 : 0,
-    ...(isDesktop ? P1Styles.shadowTop : P1Styles.shadowTopLarge),
   },
   contentContainerStyle: {
     borderTopRightRadius: 20,
@@ -82,9 +92,6 @@ const styles = StyleSheet.create({
     width: 100,
     padding: 1,
   },
-  actionSheetStyle: {
-    alignItems: 'flex-start',
-  },
   bottomSheetOption: {
     marginVertical: 5,
     marginHorizontal: 15,
@@ -96,44 +103,32 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 10,
-    ...P1Styles.shadow,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   controlPanel: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     marginHorizontal: 10,
-    ...P1Styles.shadow,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   submitButton: {
     backgroundColor: '#2E6ACF',
     borderRadius: 20,
     marginHorizontal: 10,
     marginVertical: 10,
-    ...P1Styles.shadow,
-  },
-  shippingDetailsASHandle: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-  collapsibleList: {
-    borderBottomColor: '#E5E5E5',
-    borderBottomWidth: 1,
-    zIndex: 1000,
-  },
-  collapsibleListContent: {
-    zIndex: 1000,
-  },
-  deliveryTypeHandle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    columnGap: 10,
-  },
-  logOutConfirmButton: {
-    backgroundColor: '#2E6ACF',
-    borderRadius: 20,
-    ...P1Styles.shadow,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   postOrderListThumbnail: {
     height: 45,
@@ -142,23 +137,46 @@ const styles = StyleSheet.create({
     objectFit: 'contain',
     backgroundColor: '#EDCAD1',
   },
+  logOutConfirmButton: {
+    backgroundColor: '#2E6ACF',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  whiteText: {
+    color: '#FFFFFF',
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  cartItemContainer: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
 });
 
-const Cart = (props: any) => {
+interface CartProps {
+  navigation: any;
+  bottomTabsMounted?: boolean;
+}
+
+const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
   const [submitting, setSubmitting] = useState(false);
   const [logOutDialogOpen, setLogOutDialogOpen] = useState(false);
   const [orderSPDialogOpen, setOrderSPDialogOpen] = useState(false);
+
   const isPickupMode = useIsPickupMode();
-  const toggleOrderSPDialogOpen = () =>
-    setOrderSPDialogOpen(!orderSPDialogOpen);
-
-  const toggleLogOutDialogOpen = () => {
-    // if (logOutDialogOpen) {
-    //     props.navigation.goBack();
-    // }
-
-    setLogOutDialogOpen(!logOutDialogOpen);
-  };
+  const {authStatus, appMode} = useContext(AuthContext);
+  const {APIPost} = useContext(APIContext);
+  const {showToast} = useContext(ToastContext);
 
   const {
     cart,
@@ -180,30 +198,21 @@ const Cart = (props: any) => {
     handleSubtract: state.handleSubtract,
   }));
 
-  const {authStatus, appMode} = useContext(AuthContext);
-
-  const {APIPost} = useContext(APIContext);
-
-  const {showToast} = useContext(ToastContext);
-
   const priceKey = getItemPriceKey(appMode as string);
-
   const cartTotalCalculator = getCartTotalCalculator(appMode as string);
-
   const cartBodyProcessor = getCartBodyProcessor(appMode as string);
 
+  const toggleOrderSPDialogOpen = () =>
+    setOrderSPDialogOpen(!orderSPDialogOpen);
+  const toggleLogOutDialogOpen = () => setLogOutDialogOpen(!logOutDialogOpen);
+
   const removeItemFromCart = (item: any) => {
-    const cartItems = [...cart.items];
-
-    const itemIndex = cartItems.findIndex(
-      (cartItem: any) => cartItem.id === item.id,
+    const updatedItems = cart.items.filter(
+      (cartItem: any) => cartItem.id !== item.id,
     );
-
-    cartItems.splice(itemIndex, 1);
-
     updateCart({
-      items: cartItems,
-      totalAmount: cartTotalCalculator(cartItems),
+      items: updatedItems,
+      totalAmount: cartTotalCalculator(updatedItems),
     });
   };
 
@@ -217,61 +226,60 @@ const Cart = (props: any) => {
     });
   };
 
-  const uploadImage = (response: any) => {
-    if (response) {
-      const image = response?.assets[0];
-      const fileName =
-        image.fileName ||
-        `prescription-${Date.now()}.${extensionFromBase64(image.uri)}`;
-      uploadToServer(
-        {
-          data: Buffer.from(image.base64 || '', 'base64'),
-          name: fileName,
-          type: image.type || mimeFromBase64(image.uri),
-        },
-        {
-          APIPost,
-        },
-      )
-        .then((res: any) => {
-          APIPost({
-            url: getURL({
-              key: 'PRESCRIPTION',
-            }),
-            body: {
-              imageUrl: res,
-            },
-          })
-            .then((response: any) => {
-              updateCart({
-                prescriptionIds: [
-                  ...(cart.prescriptionIds || []),
-                  response.data.id,
-                ],
-              });
-              setAddedPrescriptions([
-                ...addedPrescriptions,
-                {id: response.data.id, imageUrl: res},
-              ]);
-            })
-            .catch((error: any) => {
-              showToast({
-                ...ToastProfiles.error,
-                title: parseError(error).message,
-                id: 'prescription-save-error',
-                origin: 'top',
-              });
-            });
+  const handleImageUpload = (response: any) => {
+    if (!response?.assets?.[0]) return;
+
+    const image = response.assets[0];
+    const fileName =
+      image.fileName ||
+      `prescription-${Date.now()}.${extensionFromBase64(image.uri)}`;
+
+    uploadToServer(
+      {
+        data: Buffer.from(image.base64 || '', 'base64'),
+        name: fileName,
+        type: image.type || mimeFromBase64(image.uri),
+      },
+      {APIPost},
+    )
+      .then((res: any) => {
+        APIPost({
+          url: getURL({key: 'PRESCRIPTION'}),
+          body: {imageUrl: res},
         })
-        .catch((error: any) => {
-          showToast({
-            ...ToastProfiles.error,
-            title: parseError(error).message,
-            id: 'image-upload-error',
-            origin: 'top',
-          });
-        });
-    }
+          .then((response: any) => {
+            updateCart({
+              prescriptionIds: [
+                ...(cart.prescriptionIds || []),
+                response.data.id,
+              ],
+            });
+            setAddedPrescriptions([
+              ...addedPrescriptions,
+              {id: response.data.id, imageUrl: res},
+            ]);
+          })
+          .catch(handlePrescriptionSaveError);
+      })
+      .catch(handleImageUploadError);
+  };
+
+  const handlePrescriptionSaveError = (error: any) => {
+    showToast({
+      ...ToastProfiles.error,
+      title: parseError(error).message,
+      id: 'prescription-save-error',
+      origin: 'top',
+    });
+  };
+
+  const handleImageUploadError = (error: any) => {
+    showToast({
+      ...ToastProfiles.error,
+      title: parseError(error).message,
+      id: 'image-upload-error',
+      origin: 'top',
+    });
   };
 
   const removePrescription = (id: string) => {
@@ -289,7 +297,6 @@ const Cart = (props: any) => {
   const takePhoto = () => {
     if (!authStatus.loggedIn) {
       toggleLogOutDialogOpen();
-
       return;
     }
 
@@ -298,13 +305,12 @@ const Cart = (props: any) => {
       quality: 0.3,
       includeBase64: true,
       saveToPhotos: true,
-    }).then(uploadImage);
+    }).then(handleImageUpload);
   };
 
   const pickImage = () => {
     if (!authStatus.loggedIn) {
       toggleLogOutDialogOpen();
-
       return;
     }
 
@@ -312,16 +318,10 @@ const Cart = (props: any) => {
       mediaType: 'photo',
       quality: 0.3,
       includeBase64: true,
-    }).then(uploadImage);
+    }).then(handleImageUpload);
   };
 
-  const placeOrder = () => {
-    if (!authStatus.loggedIn) {
-      toggleLogOutDialogOpen();
-
-      return;
-    }
-
+  const validateOrder = () => {
     if (cart.items.length === 0) {
       showToast({
         ...ToastProfiles.error,
@@ -329,13 +329,13 @@ const Cart = (props: any) => {
         id: 'empty-cart',
         origin: 'top',
       });
-      return;
+      return false;
     }
 
     if (
       appMode === UserRoleAlias.CUSTOMER &&
       cart.shippingType === 0 &&
-      (!cart.locationId || cart.locationId === '')
+      !cart.locationId
     ) {
       showToast({
         ...ToastProfiles.error,
@@ -343,129 +343,213 @@ const Cart = (props: any) => {
         id: 'empty-location',
         origin: 'top',
       });
+      return false;
+    }
+
+    return true;
+  };
+
+  const placeOrder = () => {
+    if (!authStatus.loggedIn) {
+      toggleLogOutDialogOpen();
       return;
     }
 
-    const cartBody = cartBodyProcessor(cart);
+    if (!validateOrder()) return;
 
+    const cartBody = cartBodyProcessor(cart);
     setSubmitting(true);
 
     APIPost({
-      url: getURL({
-        key: placeOrderAPIKey[appMode as string],
-      }),
+      url: getURL({key: placeOrderAPIKey[appMode as string]}),
       body: cartBody,
-      resolve: (response: any) => {
-        if (!response.data) {
-          throw response;
-        }
-
-        showToast({
-          ...ToastProfiles.success,
-          title: response.data.userMessage,
-          id: 'order-submit-success',
-          origin: 'top-left',
-        });
-
-        setSubmitting(false);
-
-        if (appMode === UserRoleAlias.CUSTOMER) {
-          resetCart();
-
-          resetAddedPrescriptions();
-
-          props.navigation.navigate('OrderDetails', {
-            orderId: response.data.id,
-          });
-        } else {
-          toggleOrderSPDialogOpen();
-        }
-      },
-      reject: (error: any) => {
-        if (error.error) {
-          showToast({
-            ...ToastProfiles.error,
-            title: parseError(error).message,
-            id: 'order-submit-error',
-            origin: 'top',
-          });
-          setSubmitting(false);
-          return;
-        }
-        setSubmitting(false);
-        showToast({...ToastProfiles.error, id: 'bill-submit-error'});
-      },
+      resolve: handleOrderSuccess,
+      reject: handleOrderError,
     });
+  };
+
+  const handleOrderSuccess = (response: any) => {
+    if (!response.data) throw response;
+
+    showToast({
+      ...ToastProfiles.success,
+      title: response.data.userMessage,
+      id: 'order-submit-success',
+      origin: 'top-left',
+    });
+
+    setSubmitting(false);
+
+    if (appMode === UserRoleAlias.CUSTOMER) {
+      resetCartAndNavigate(response.data.id);
+    } else {
+      toggleOrderSPDialogOpen();
+    }
+  };
+
+  const handleOrderError = (error: any) => {
+    setSubmitting(false);
+
+    if (error.error) {
+      showToast({
+        ...ToastProfiles.error,
+        title: parseError(error).message,
+        id: 'order-submit-error',
+        origin: 'top',
+      });
+      return;
+    }
+
+    showToast({...ToastProfiles.error, id: 'bill-submit-error'});
+  };
+
+  const resetCartAndNavigate = (orderId: string) => {
+    resetCart();
+    resetAddedPrescriptions();
+    navigation.navigate('OrderDetails', {orderId});
   };
 
   const onOrderComplete = () => {
     resetCart();
-
     resetAddedPrescriptions();
-
     toggleOrderSPDialogOpen();
 
-    if (props.bottomTabsMounted) props.navigation.push('Home');
-    else props.navigation.navigate('Home', {initialTab: 'Dashboard'});
+    if (bottomTabsMounted) {
+      navigation.push('Home');
+    } else {
+      navigation.navigate('Home', {initialTab: 'Dashboard'});
+    }
   };
 
   const goToLogin = () => {
     toggleLogOutDialogOpen();
-    props.navigation.navigate('Login');
+    navigation.navigate('Login');
   };
 
+  const renderCartItem = ({item, index}: {item: any; index: number}) => (
+    <View style={styles.cartItemContainer} key={`${item.id}_${index}`}>
+      <HStack space={2} alignItems="center">
+        <Image
+          source={{uri: item.imageUrl}}
+          style={styles.productImage}
+          alt={item.name}
+          accessibilityLabel={item.name}
+        />
+        <VStack flex={1} alignItems="flex-start">
+          <HStack
+            width="100%"
+            alignItems="center"
+            justifyContent="space-between">
+            <Text fontSize={14} lineHeight={14} fontWeight="500">
+              {item.name}
+            </Text>
+            <IconButton
+              icon={
+                <FontAwesomeIcon icon={faTrashAlt} color="#FF0000" size={16} />
+              }
+              onPress={() => removeItemFromCart(item)}
+            />
+          </HStack>
+          <HStack
+            width="100%"
+            alignItems="center"
+            justifyContent="space-between">
+            <Text fontSize={16} lineHeight={16} fontWeight="600">
+              {`${RUPEE_SYMBOL} ${(
+                item[priceKey] ??
+                item.price ??
+                0
+              ).toLocaleString('en-US', {
+                maximumFractionDigits: 2,
+              })}`}
+            </Text>
+            <Counter
+              value={item.qty || 0}
+              zeroCounterLabel="Add to Cart"
+              add={() => handleAdd(item)}
+              subtract={() => handleSubtract(item)}
+              containerStyle={styles.cartItemCounter}
+              buttonPadding={2}
+            />
+          </HStack>
+        </VStack>
+      </HStack>
+    </View>
+  );
+
+  const renderOrderSummaryItem = (item: any, index: number) => (
+    <>
+      <HStack justifyContent="space-between">
+        <HStack space={2} alignItems="center">
+          <Image
+            source={{uri: item.imageUrl}}
+            style={styles.postOrderListThumbnail}
+            alt={item.name}
+            accessibilityLabel={item.name}
+          />
+          <Text
+            flex={1}
+            fontSize={14}
+            lineHeight={14}
+            fontWeight="500"
+            numberOfLines={1}>
+            {item.name}
+          </Text>
+        </HStack>
+        <VStack alignItems="flex-end" space={1}>
+          <Text fontSize={14} lineHeight={14} fontWeight="600">
+            {`${
+              [UserRoleAlias.CUSTOMER, UserRoleAlias.B2C_SALESMAN, ''].includes(
+                appMode as UserRole,
+              )
+                ? 'MRP: '
+                : 'PTR: '
+            }${RUPEE_SYMBOL} ${(
+              item[priceKey] ??
+              item.price ??
+              0
+            ).toLocaleString('en-US', {
+              maximumFractionDigits: 2,
+            })}`}
+          </Text>
+          <Text fontSize={14} lineHeight={14}>
+            {`Qty: ${item.qty}`}
+          </Text>
+        </VStack>
+      </HStack>
+      {index < cart.items.length - 1 && <Divider orientation="horizontal" />}
+    </>
+  );
+
   return (
-    <VStack
-      h="100%"
-      bgColor={isDesktop ? '#EFEFEF' : '#2E6ACF'}
-      alignItems="center">
+    <VStack flex={1} bgColor="#2E6ACF" alignItems="center">
+      {/* Header */}
       <HStack style={styles.header}>
         <HStack space={2} alignItems="center">
           <IconButton
             variant="unstyled"
-            onPress={props.navigation.goBack}
+            onPress={navigation.goBack}
             p={0}
             icon={
-              <FontAwesomeIcon
-                icon="arrow-left"
-                size={20}
-                color={isDesktop ? '#2E6ACF' : '#FFFFFF'}
-              />
+              <FontAwesomeIcon icon={faArrowLeft} size={20} color="#FFFFFF" />
             }
           />
-          <FontAwesomeIcon
-            icon={faCartPlus}
-            size={25}
-            style={{color: isDesktop ? '#2E6ACF' : '#FFFFFF'}}
-          />
-          <Text
-            color={isDesktop ? '#2E6ACF' : '#FFFFFF'}
-            fontSize={20}
-            fontWeight="400">
+          <FontAwesomeIcon icon={faCartPlus} size={25} color="#FFFFFF" />
+          <Text style={styles.whiteText} fontSize={20} fontWeight="400">
             Shopping Cart
           </Text>
         </HStack>
-        <Text
-          color={isDesktop ? '#2E6ACF' : '#FFFFFF'}
-          fontSize={20}
-          fontWeight="400">
-          {RUPEE_SYMBOL +
-            ' ' +
-            (cart.totalAmount ?? 0).toLocaleString('en-US', {
-              maximumFractionDigits: 2,
-            })}
+        <Text style={styles.whiteText} fontSize={20} fontWeight="400">
+          {`${RUPEE_SYMBOL} ${(cart.totalAmount ?? 0).toLocaleString('en-US', {
+            maximumFractionDigits: 2,
+          })}`}
         </Text>
       </HStack>
+
+      {/* Cart Content */}
       <View style={styles.contentBase}>
         <VStack position="absolute" height="100%" width="100%">
-          <Text
-            fontSize={14}
-            bold
-            p={3}
-            borderBottomWidth={1}
-            borderBottomColor="#E0E0E0">
-            Items in your Cart:
-          </Text>
+          <Text style={styles.sectionHeader}>Items in your Cart:</Text>
           <FlatList
             height="100%"
             bounces={false}
@@ -474,77 +558,19 @@ const Cart = (props: any) => {
             ListEmptyComponent={() => (
               <InfoScreen message="Your cart is empty" />
             )}
-            renderItem={({item, index}: {item: any; index: number}) => (
-              <VStack
-                key={`${item.id.toString()}_${index}_${Date.now()}`}
-                p={3}
-                borderBottomWidth={index === cart.items.length - 1 ? 0 : 1}
-                borderBottomColor="#E0E0E0">
-                <HStack space={2} alignItems="center">
-                  <View>
-                    <Image
-                      source={{
-                        uri: item.imageUrl,
-                      }}
-                      style={styles.productImage}
-                      alt={item.name}
-                      accessibilityLabel={item.name}
-                    />
-                  </View>
-                  <VStack flex={1} alignItems="flex-start">
-                    <HStack
-                      width="100%"
-                      alignItems="center"
-                      justifyContent="space-between">
-                      <Text fontSize={14} lineHeight={14} fontWeight="500">
-                        {item.name}
-                      </Text>
-                      <IconButton
-                        icon={
-                          <FontAwesomeIcon icon="trash-alt" color="#FF0000" />
-                        }
-                        onPress={() => removeItemFromCart(item)}
-                      />
-                    </HStack>
-                    <HStack
-                      width="100%"
-                      alignItems="center"
-                      justifyContent="space-between">
-                      <Text fontSize={16} lineHeight={16} fontWeight="600">
-                        {RUPEE_SYMBOL +
-                          ' ' +
-                          (item[priceKey] ?? item.price ?? 0).toLocaleString(
-                            'en-US',
-                            {maximumFractionDigits: 2},
-                          )}
-                      </Text>
-                      <Counter
-                        value={
-                          cart.items.find(
-                            (cartItem: any) => cartItem.id === item.id,
-                          )?.qty || 0
-                        }
-                        zeroCounterLabel="Add to Cart"
-                        add={() => handleAdd(item)}
-                        subtract={() => handleSubtract(item)}
-                        containerStyle={styles.cartItemCounter}
-                        buttonPadding={2}
-                      />
-                    </HStack>
-                  </VStack>
-                </HStack>
-              </VStack>
-            )}
+            renderItem={renderCartItem}
           />
         </VStack>
+
+        {/* Control Panel */}
         <CartControlPanel
           cartItems={cart.items}
-          bottomTabsMounted={props.bottomTabsMounted}
+          bottomTabsMounted={bottomTabsMounted ?? false}
           shippingType={cart.shippingType}
           setShippingType={setShippingType}
           submitting={submitting}
           updateCart={updateCart}
-          navigation={props.navigation}
+          navigation={navigation}
           placeOrder={placeOrder}
           locationId={cart.locationId}
           retailerId={cart.retailerId}
@@ -555,6 +581,8 @@ const Cart = (props: any) => {
           removePrescription={removePrescription}
         />
       </View>
+
+      {/* Login Required Dialog */}
       <P1AlertDialog
         heading="You need to log-in first"
         body="To place an order, you need to be logged in. Please login to continue."
@@ -564,65 +592,20 @@ const Cart = (props: any) => {
           {
             label: 'Proceed to Login',
             variant: 'solid',
-            style: {
-              ...styles.logOutConfirmButton,
-              backgroundColor: '#D00000',
-            },
+            style: {...styles.logOutConfirmButton, backgroundColor: '#D00000'},
             action: goToLogin,
           },
         ]}
       />
+
+      {/* Order Success Dialog */}
       <P1AlertDialog
         heading="Order Placed Successfully"
         body={
           <ScrollView maxHeight={80} contentContainerStyle={{gap: 10}}>
-            {cart.items?.map((item: any, index: number) => (
-              <>
-                <HStack justifyContent="space-between">
-                  <HStack space={2} alignItems="center">
-                    <Image
-                      source={{
-                        uri: item.imageUrl,
-                      }}
-                      style={styles.postOrderListThumbnail}
-                      alt={item.name}
-                      accessibilityLabel={item.name}
-                    />
-                    <Text
-                      flex={1}
-                      fontSize={14}
-                      lineHeight={14}
-                      fontWeight="500"
-                      numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                  </HStack>
-                  <VStack alignItems="flex-end" space={1}>
-                    <Text fontSize={14} lineHeight={14} fontWeight="600">
-                      {([
-                        UserRoleAlias.CUSTOMER,
-                        UserRoleAlias.B2C_SALESMAN,
-                        ``,
-                      ].includes(appMode as UserRole)
-                        ? 'MRP: '
-                        : 'PTR: ') +
-                        RUPEE_SYMBOL +
-                        ' ' +
-                        (item[priceKey] ?? item.price ?? 0).toLocaleString(
-                          'en-US',
-                          {maximumFractionDigits: 2},
-                        )}
-                    </Text>
-                    <Text fontSize={14} lineHeight={14}>
-                      {'Qty: ' + item.qty}
-                    </Text>
-                  </VStack>
-                </HStack>
-                {index < cart.items?.length - 1 && (
-                  <Divider orientation="horizontal" />
-                )}
-              </>
-            ))}
+            {cart.items.map((item: any, index: number) =>
+              renderOrderSummaryItem(item, index),
+            )}
           </ScrollView>
         }
         hideCancel
@@ -633,7 +616,7 @@ const Cart = (props: any) => {
           {
             label: 'Done',
             variant: 'solid',
-            style: {...styles.logOutConfirmButton},
+            style: styles.logOutConfirmButton,
             action: onOrderComplete,
           },
         ]}
@@ -641,4 +624,5 @@ const Cart = (props: any) => {
     </VStack>
   );
 };
+
 export default Cart;

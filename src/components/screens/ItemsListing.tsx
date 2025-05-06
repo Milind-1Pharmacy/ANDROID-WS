@@ -1,6 +1,6 @@
 import React, {useState, useContext, useEffect, useCallback} from 'react';
 import {IconButton, VStack, View} from 'native-base';
-import {Dimensions, Platform, StyleSheet} from 'react-native';
+import {Dimensions, StyleSheet} from 'react-native';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from 'App';
@@ -18,9 +18,6 @@ import {getCartTotalCalculator, parseError} from '@helpers';
 import P1Styles from '@P1StyleSheet';
 import {useContextSelector} from 'use-context-selector';
 
-const {width: screenWidth, height} = Dimensions.get('window');
-const isDesktop = Platform.OS === 'web' && screenWidth > height;
-
 const styles = StyleSheet.create({
   contentBase: {
     flex: 1,
@@ -28,18 +25,15 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderTopLeftRadius: 20,
     overflow: 'hidden',
-    marginTop: isDesktop ? 8 : 2,
-    backgroundColor: !isDesktop ? '#FFFFFF' : undefined,
+    marginTop: 2,
+    backgroundColor: '#FFFFFF',
   },
   contentContainerStyle: {
-    width: isDesktop ? '100%' : '100%',
+    width: '100%',
     borderTopRightRadius: 20,
     borderTopLeftRadius: 20,
     backgroundColor: '#ffffff',
-    paddingTop: isDesktop ? 15 : 0,
-    // ...(isDesktop ? P1Styles.shadowTop : P1Styles.shadowTopLarge),
-    paddingLeft: isDesktop ? 16 : 0,
-    gap: isDesktop ? 16 : 4,
+    gap: 4,
   },
   cartBadge: {
     position: 'absolute',
@@ -68,15 +62,18 @@ const ItemsListing = ({
   });
   const [loading, setLoading] = useState<boolean>(true);
 
-  const {storeId, appMode} = useContext(AuthContext);
+  const {storeId} = useContext(AuthContext);
   const {APIGet} = useContext(APIContext);
   const {showToast} = useContext(ToastContext);
-  const {cart, handleAdd, handleSubtract} = useContextSelector(FormStateContext, state => ({
-    cart: state.cart,
-    updateCart: state.updateCart,
-    handleAdd: state.handleAdd,
-    handleSubtract: state.handleSubtract,
-  }));
+  const {cart, handleAdd, handleSubtract} = useContextSelector(
+    FormStateContext,
+    state => ({
+      cart: state.cart,
+      updateCart: state.updateCart,
+      handleAdd: state.handleAdd,
+      handleSubtract: state.handleSubtract,
+    }),
+  );
   // Fetch data from the API
   const fetchRenderData = useCallback(
     async ({
@@ -124,12 +121,10 @@ const ItemsListing = ({
     [APIGet, route.params, storeId, showToast],
   );
 
-  // Fetch data on component mount
   useEffect(() => {
     fetchRenderData({});
   }, [fetchRenderData]);
 
-  // Handle refresh action
   const onRefresh = useCallback(
     (setRefreshing: Function) => {
       setRefreshing(true);
@@ -141,7 +136,6 @@ const ItemsListing = ({
     [fetchRenderData],
   );
 
-  // Render cart icon with badge
   const renderCartIcon = useCallback(
     () => (
       <View position="relative">
@@ -155,26 +149,24 @@ const ItemsListing = ({
             <FontAwesomeIcon
               size={20}
               icon="cart-shopping"
-              style={{color: isDesktop ? '#2E6ACF' : '#FFFFFF'}}
+              style={{color: '#FFFFFF'}}
             />
           }
         />
       </View>
     ),
-    [cart.items.length, isDesktop, navigation],
+    [cart.items.length, navigation],
   );
 
-  useEffect(() => {
-  }, [cart]);
   return (
     <ScreenBase>
-      <VStack h="100%" bgColor={isDesktop ? '#EFEFEF' : '#2E6ACF'}>
+      <VStack h="100%" bgColor="#2E6ACF">
         <Header
           screenTitle={renderData.title || route.params.type || 'Products'}
           screenTitleLoadingPlaceholder="Products"
           loading={loading}
           controls={renderCartIcon()}
-          textColor={isDesktop ? '#2E6ACF' : '#FFFFFF'}
+          textColor="#FFFFFF"
         />
         {loading ? (
           <LoadingScreen />

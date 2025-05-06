@@ -22,7 +22,6 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {parseError} from '@helpers';
 import React from 'react';
 
-
 const {width: screenWidth, height} = Dimensions.get('window');
 
 const isDesktop = Platform.OS === 'web' && screenWidth > height;
@@ -33,18 +32,19 @@ const styles = StyleSheet.create({
     width: '100%',
     borderTopRightRadius: 20,
     borderTopLeftRadius: 20,
-    overflow: 'hidden',
-    marginTop: 5,
+    // overflow: 'hidden',
+    marginTop: 8,
+    backgroundColor: '#ff00000',
   },
   contentContainerStyle: {
     width: isDesktop ? '99%' : '100%',
-    flex: 1,
+    flexGrow: 1,
     marginHorizontal: isDesktop ? 10 : 0,
     marginTop: isDesktop ? 10 : 0,
     borderTopRightRadius: 20,
     borderTopLeftRadius: 20,
     backgroundColor: '#FFFFFF',
-    paddingTop: 15,
+    paddingTop: 10,
     ...(isDesktop ? P1Styles.shadowTop : P1Styles.shadowTopLarge),
   },
   itemsQtyBadgeButton: {
@@ -72,9 +72,13 @@ const cardPropParser = (item: any) => ({
     ...((item.status || '').toLowerCase() === 'delivered'
       ? [`Delivered On: ${moment.unix(item.deliveredOn).format('DD-MMM-YYYY')}`]
       : [
-          `Estimated Delivery: ${moment.unix(item.estimatedDelivery).format('DD-MMM-YYYY')}`,
+          `Estimated Delivery: ${moment
+            .unix(item.estimatedDelivery)
+            .format('DD-MMM-YYYY')}`,
         ]),
-    `Total Amount: ${RUPEE_SYMBOL} ${item.items.reduce((acc: number, curr: any) => acc + (curr.totalPrice || 0), 0).toLocaleString('en-US', {maxFractionDigits: 2})}`,
+    `Total Amount: ${RUPEE_SYMBOL} ${item.items
+      .reduce((acc: number, curr: any) => acc + (curr.totalPrice || 0), 0)
+      .toLocaleString('en-US', {maxFractionDigits: 2})}`,
   ],
   badge: (
     <View style={{...P1Styles.shadow, borderRadius: 20}}>
@@ -90,8 +94,18 @@ const cardPropParser = (item: any) => ({
     title: nestedListItem.name,
     subtitle: `Qty: ${nestedListItem.orderedQty}`,
     details: [
-      `MRP: ${RUPEE_SYMBOL} ${nestedListItem.mrp ? nestedListItem.mrp.toLocaleString('en-US', {maxFractionDigits: 2}) : '-'}`,
-      `Total: ${RUPEE_SYMBOL} ${nestedListItem.totalPrice ? nestedListItem.totalPrice.toLocaleString('en-US', {maxFractionDigits: 2}) : '-'}`,
+      `MRP: ${RUPEE_SYMBOL} ${
+        nestedListItem.mrp
+          ? nestedListItem.mrp.toLocaleString('en-US', {maxFractionDigits: 2})
+          : '-'
+      }`,
+      `Total: ${RUPEE_SYMBOL} ${
+        nestedListItem.totalPrice
+          ? nestedListItem.totalPrice.toLocaleString('en-US', {
+              maxFractionDigits: 2,
+            })
+          : '-'
+      }`,
     ],
   })),
 });

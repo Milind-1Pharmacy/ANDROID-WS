@@ -109,29 +109,28 @@ import {
 } from '@helpers';
 import SideCart from './src/components/commonComponents/SideCart';
 
-import {
-  Home,
-  LoginScreen,
-  VerifyOTP,
-  ItemDetails,
-  SearchScreen,
-  CartScreen,
-  OrderDetailsScreen,
-  OrdersListing,
-  AddressListScreen,
-  SupportScreen,
-  SearchAddress,
-  SelectLocation,
-  AddressForm,
-  PrescriptionOrder,
-  ItemsListing,
-} from './src/components/screens/index';
+// import {
+//   Home,
+//   LoginScreen,
+//   VerifyOTP,
+//   ItemDetails,
+//   SearchScreen,
+//   CartScreen,
+//   OrderDetailsScreen,
+//   OrdersListing,
+//   AddressListScreen,
+//   SupportScreen,
+//   SearchAddress,
+//   SelectLocation,
+//   AddressForm,
+//   PrescriptionOrder,
+//   ItemsListing,
+// } from './src/components/screens/index';
 
-import DynamicGridScreen from '@screens/DynamicGridScreen';
+// import DynamicGridScreen from '@screens/DynamicGridScreen';
 import {suspensify} from '@Lazy';
 import {debounce} from 'lodash';
 import {useContextSelector} from 'use-context-selector';
-import HomeTabs from 'src/components/screens/Home/HomeTabs';
 
 library.add(
   faPills,
@@ -205,34 +204,32 @@ const _1PNativeBaseTheme = extendTheme({
     },
   },
 });
-const {width, height} = Dimensions.get('window');
-const isDesktop = Platform.OS === 'web' && width > height;
-// const SearchAddress = React.lazy(() => import('@screens/SearchAddress'));
-// const AddressListScreen = React.lazy(
-//   () => import('@screens/AddressListScreen'),
-// );
-// const CartScreen = React.lazy(() =>
-//   Promise.resolve(import('@screens/CartScreen')),
-// );
-// const Home = React.lazy(() => import('@screens/Home'));
-// const ItemDetails = React.lazy(() => import('@screens/ItemDetails'));
-// const LoginScreen = React.lazy(() =>
-//   Promise.resolve(import('@screens/LoginScreen')),
-// );
-// const OrderDetailsScreen = React.lazy(
-//   () => import('@screens/OrderDetailsScreen'),
-// );
-// const OrdersListing = React.lazy(() => import('@screens/OrdersListing'));
-// const SearchScreen = React.lazy(() => import('@screens/SearchScreen'));
-// const SelectLocation = React.lazy(() => import('@screens/SelectLocation'));
-// const SupportScreen = React.lazy(() => import('@screens/SupportScreen'));
-// const VerifyOTP = React.lazy(() => import('@screens/VerifyOTP'));
-// const AddressForm = React.lazy(() => import('@screens/AddressForm'));
-// // const PrescriptionOrder = React.lazy(() => import('@screens/PrescriptionOrder'));
-// const ItemsListing = React.lazy(() => import('@screens/ItemsListing'));
-// const DynamicGridScreen = React.lazy(
-//   () => import('@screens/DynamicGridScreen'),
-// );
+const SearchAddress = React.lazy(() => import('@screens/SearchAddress'));
+const AddressListScreen = React.lazy(
+  () => import('@screens/AddressListScreen'),
+);
+const CartScreen = React.lazy(() =>
+  Promise.resolve(import('@screens/CartScreen')),
+);
+const Home = React.lazy(() => import('@screens/Home'));
+const ItemDetails = React.lazy(() => import('@screens/ItemDetails'));
+const LoginScreen = React.lazy(() =>
+  Promise.resolve(import('@screens/LoginScreen')),
+);
+const OrderDetailsScreen = React.lazy(
+  () => import('@screens/OrderDetailsScreen'),
+);
+const OrdersListing = React.lazy(() => import('@screens/OrdersListing'));
+const SearchScreen = React.lazy(() => import('@screens/SearchScreen'));
+const SelectLocation = React.lazy(() => import('@screens/SelectLocation'));
+const SupportScreen = React.lazy(() => import('@screens/SupportScreen'));
+const VerifyOTP = React.lazy(() => import('@screens/VerifyOTP'));
+const AddressForm = React.lazy(() => import('@screens/AddressForm'));
+const PrescriptionOrder = React.lazy(() => import('@screens/PrescriptionOrder'));
+const ItemsListing = React.lazy(() => import('@screens/ItemsListing'));
+const DynamicGridScreen = React.lazy(
+  () => import('@screens/DynamicGridScreen'),
+);
 
 export type RootStackParamList = {
   Home: {initialTab: string} | undefined;
@@ -638,7 +635,6 @@ type StoreInfo = {
 // };
 
 function App(): JSX.Element {
-  const Stack = createNativeStackNavigator<RootStackParamList>();
 
   return (
     <NativeBaseProvider theme={_1PNativeBaseTheme}>

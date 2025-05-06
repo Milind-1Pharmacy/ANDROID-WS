@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
     paddingBottom: 150,
     // overflowY: 'overlay',
     borderRadius: isDesktop ? 20 : undefined,
+    flexGrow: 1,
   },
 });
 
@@ -98,12 +99,12 @@ const ListView = (props: any) => {
     props.list
       ? props.list.length
       : props.sections
-        ? props.sections.reduce(
-            (count: number, section: any) =>
-              (count += section.cards ? section.cards.length : 0),
-            0,
-          )
-        : 0,
+      ? props.sections.reduce(
+          (count: number, section: any) =>
+            (count += section.cards ? section.cards.length : 0),
+          0,
+        )
+      : 0,
   );
 
   const searchEnabled = props.searchEnabled == false ? false : true;
@@ -130,12 +131,12 @@ const ListView = (props: any) => {
       props.list
         ? props.list.length
         : props.sections
-          ? props.sections.reduce(
-              (count: number, section: any) =>
-                (count += section.cards ? section.cards.length : 0),
-              0,
-            )
-          : 0,
+        ? props.sections.reduce(
+            (count: number, section: any) =>
+              (count += section.cards ? section.cards.length : 0),
+            0,
+          )
+        : 0,
     );
   }, [props.list, props.sections]);
 
@@ -156,7 +157,7 @@ const ListView = (props: any) => {
   }, [searchKeyword]);
 
   return (
-    <>
+    <View style={{flex: 1}}>
       {searchEnabled && (
         <View
           style={{
@@ -179,7 +180,7 @@ const ListView = (props: any) => {
         </View>
       )}
       <View
-        style={props.style}
+        style={{...props.style, flex: 1}}
         {...(!searchEnabled && !summaryBlocks ? {paddingTop: 3} : {})}>
         {props.title && (
           <View
@@ -201,7 +202,7 @@ const ListView = (props: any) => {
           />
         ) : props.sections ? (
           <SectionList
-            style={props.style}
+            style={{...props.style, flex: 1}}
             bounces={!!props.onRefresh}
             refreshControl={
               <RefreshControl
@@ -251,7 +252,7 @@ const ListView = (props: any) => {
           />
         ) : (
           <FlatList
-            style={props.style}
+            style={{...props.style, flex: 1}}
             refreshControl={
               <RefreshControl
                 progressViewOffset={-50}
@@ -274,6 +275,7 @@ const ListView = (props: any) => {
               'card-' + index + '-' + JSON.stringify(item)
             }
             data={displayList}
+            nestedScrollEnabled={true}
             renderItem={({item}: {item: any}) => {
               const Component: React.FC<any> = getCardByIndex(item.card_id);
 
@@ -293,7 +295,7 @@ const ListView = (props: any) => {
           />
         )}
       </View>
-    </>
+    </View>
   );
 };
 

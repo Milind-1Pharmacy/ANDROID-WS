@@ -217,6 +217,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
                       <FontAwesomeIcon
                         color="#FF0000"
                         icon={faCircleExclamation}
+                        size={16}
                       />
                       <Text color="#FF0000">{errorMessage}</Text>
                     </HStack>

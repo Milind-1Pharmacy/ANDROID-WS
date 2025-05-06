@@ -190,6 +190,7 @@ const MBannerButtonCard = () => {
               source={bannerImg}
               style={{height: 48, width: 48}}
               resizeMode="contain"
+              alt='banner'
             />
           </View>
           <View style={styles.textContainer}>

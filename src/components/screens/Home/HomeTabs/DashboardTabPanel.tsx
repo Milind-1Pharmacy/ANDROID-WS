@@ -57,9 +57,7 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
 
   const isDesktop = width > height;
   const hasStoreAccess = authStatus.loggedIn || storeId;
-  const searchPlaceholderText = isDesktop
-    ? 'Your wellness, one search away!'
-    : 'Find Your Item or Medicine here';
+  const searchPlaceholderText = 'Your wellness, one search away!';
 
   const headerActions = useMemo(
     () => [
@@ -99,6 +97,7 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
           title: parseError(error).message,
           id: 'dashboard-fetch-error',
         });
+        console.error(error);
       } finally {
         onComplete();
         setLoading(false);
@@ -144,7 +143,7 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
       {!isDesktop && renderSearchBox()}
       <DynamicView loading={loading} sections={renderData.sections} />
       {loading && <View style={{height: 300}} />}
-      <View height={90} style={styles.contentEndBuffer} />
+      <View height={20} style={styles.contentEndBuffer} />
     </>
   );
 
@@ -198,7 +197,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 100,
+    paddingBottom: 0,
   },
   searchBox: {
     marginHorizontal: 10,

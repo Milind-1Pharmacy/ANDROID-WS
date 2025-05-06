@@ -1,7 +1,7 @@
 import React, {memo, useCallback, useEffect, useState} from 'react';
 import P1Styles from '@P1StyleSheet';
 import {FlatList, Input, SearchIcon, Text, View} from 'native-base';
-import {Dimensions, Platform, RefreshControl, StyleSheet} from 'react-native';
+import {Dimensions, RefreshControl, StyleSheet} from 'react-native';
 import {getCardByIndex} from '../HouseOfCards/CardsIndex';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -10,17 +10,7 @@ import {InfoScreen} from '@commonComponents';
 import {FlatGrid, SectionGrid} from 'react-native-super-grid';
 
 const {width: screenWidth, height} = Dimensions.get('window');
-
-const isDesktop = Platform.OS === 'web' && screenWidth > height;
-const getNumColumns = (width: number) => {
-  if (width > 1600) return 5;
-  if (width >= 1440) return 4;
-  return 3;
-};
-const numColumns = getNumColumns(screenWidth);
-const blockWidth = isDesktop
-  ? (screenWidth - numColumns * 10 + 20) / numColumns // Adjust for spacing
-  : screenWidth;
+const blockWidth = screenWidth;
 
 const styles = StyleSheet.create({
   searchBox: {
@@ -28,7 +18,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginHorizontal: 20,
     ...P1Styles.shadow,
-    marginBottom: !isDesktop ? 12 : undefined,
+    marginBottom: 12,
   },
   summarySection: {
     marginTop: 2,
@@ -85,10 +75,6 @@ const styles = StyleSheet.create({
   },
   listContentContainer: {
     paddingBottom: 0,
-    borderRadius: isDesktop ? 20 : undefined,
-  },
-  desktopContainer: {
-    paddingHorizontal: 20,
   },
 });
 
@@ -104,12 +90,12 @@ const GridView = (props: any) => {
     props.list
       ? props.list.length
       : props.sections
-        ? props.sections.reduce(
-            (count: number, section: any) =>
-              (count += section.cards ? section.cards.length : 0),
-            0,
-          )
-        : 0,
+      ? props.sections.reduce(
+          (count: number, section: any) =>
+            (count += section.cards ? section.cards.length : 0),
+          0,
+        )
+      : 0,
   );
 
   const searchEnabled = props.searchEnabled == false ? false : true;
@@ -136,12 +122,12 @@ const GridView = (props: any) => {
       props.list
         ? props.list.length
         : props.sections
-          ? props.sections.reduce(
-              (count: number, section: any) =>
-                (count += section.cards ? section.cards.length : 0),
-              0,
-            )
-          : 0,
+        ? props.sections.reduce(
+            (count: number, section: any) =>
+              (count += section.cards ? section.cards.length : 0),
+            0,
+          )
+        : 0,
     );
   }, [props.list, props.sections]);
 
@@ -187,11 +173,7 @@ const GridView = (props: any) => {
       );
     },
   );
-  // const handleItemPress = useCallback((item: any) => {
-  //   (itemClickActions[item.action as string] || (() => {}))(
-  //     ...(item.actionParams || []),
-  //   );
-  // }, []);
+
   return (
     <>
       {searchEnabled && (
@@ -216,7 +198,7 @@ const GridView = (props: any) => {
         </View>
       )}
       <View
-        style={[props.style, isDesktop && styles.desktopContainer, {flex: 1}]}
+        style={[props.style, {flex: 1}]}
         {...(!searchEnabled && !summaryBlocks ? {paddingTop: 3} : {})}>
         {props.title && (
           <View
@@ -238,7 +220,7 @@ const GridView = (props: any) => {
           />
         ) : props.sections ? (
           <SectionGrid
-            itemDimension={isDesktop ? 300 : blockWidth / 2}
+            itemDimension={blockWidth / 2}
             style={props.style}
             bounces={!!props.onRefresh}
             refreshControl={
@@ -293,7 +275,7 @@ const GridView = (props: any) => {
             itemDimension={blockWidth}
             spacing={0}
             style={props.style}
-            maxItemsPerRow={!isDesktop ? 1 : numColumns}
+            maxItemsPerRow={1}
             refreshControl={
               <RefreshControl
                 progressViewOffset={-50}

@@ -10,16 +10,28 @@ export const extensionFromBase64 = (base64: string): string => {
   return (base64.match(fileExtensionRegex) || [])[1];
 };
 
-export const getInitials = (name: string): string => {
-  const nameSplit = name.split(' ');
-
-  const wordCount = nameSplit.length;
-
-  if (wordCount > 1) {
-    return nameSplit[0][0] + nameSplit[wordCount - 1][0];
-  } else if (wordCount === 1) {
-    return nameSplit[0][0] + nameSplit[0][0];
+export const getInitials = (name?: string | null): string => {
+  // Handle null/undefined/empty cases first
+  if (!name || name.trim().length === 0) {
+    return 'Guest';
   }
 
+  const nameSplit = name.trim().split(' ');
+  const wordCount = nameSplit.length;
+
+  // Handle single word names
+  if (wordCount === 1) {
+    const firstChar = nameSplit[0][0]?.toUpperCase() || '';
+    return firstChar + firstChar;
+  }
+
+  // Handle multiple word names
+  if (wordCount > 1) {
+    const firstChar = nameSplit[0][0]?.toUpperCase() || '';
+    const lastChar = nameSplit[wordCount - 1][0]?.toUpperCase() || '';
+    return firstChar + lastChar;
+  }
+
+  // Fallback
   return '--';
 };

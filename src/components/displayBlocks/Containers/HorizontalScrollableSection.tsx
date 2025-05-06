@@ -1,7 +1,12 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {HStack, ScrollView, Text, VStack, Skeleton} from 'native-base';
-import {Dimensions, Platform, StyleSheet, Animated, TextStyle} from 'react-native';
-
+import {
+  Dimensions,
+  Platform,
+  StyleSheet,
+  Animated,
+  TextStyle,
+} from 'react-native';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 const isDesktop = Platform.OS === 'web' && screenWidth > screenHeight;
@@ -21,8 +26,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   titleText: {
-    fontWeight: '600',
-    fontSize: 20,
+    fontWeight: '700',
+    fontSize: 24,
+    color: 'black',
   },
   scrollView: {
     paddingStart: isDesktop ? 5 : 0,
@@ -61,7 +67,7 @@ const HorizontalScrollableSection: React.FC<
   children,
   fontWeight,
   isLoading = false,
-  color = '#3C3C3C',
+  color = 'black',
 }) => {
   const [sortedChildren, setSortedChildren] = useState<React.ReactNode[]>(
     children ? React.Children.toArray(children) : [],
@@ -117,9 +123,18 @@ const HorizontalScrollableSection: React.FC<
       }>
       <HStack style={styles.titleContainer}>
         <Text
-          style={[styles.titleText, {fontSize: fontSize, fontWeight: fontWeight as TextStyle['fontWeight']}]}
-          color={color}
-          >
+          style={[
+            styles.titleText,
+            {
+              fontSize:
+                (fontSize as TextStyle['fontSize']) ||
+                styles.titleText.fontSize,
+              fontWeight:
+                (fontWeight as TextStyle['fontWeight']) ||
+                styles.titleText.fontWeight,
+            },
+          ]}
+          color={color}>
           {content?.title || 'Shop Now !'}
         </Text>
       </HStack>

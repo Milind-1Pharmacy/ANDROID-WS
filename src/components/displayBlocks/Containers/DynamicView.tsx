@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     height: 'auto',
     paddingHorizontal: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'white',
     marginBottom: 0,
   },
   loadingContainer: {
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 4,
     marginBottom: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FEFEFE',
     marginLeft: 8,
     paddingVertical: 8,
     marginTop: 6,
@@ -82,7 +82,8 @@ const DynamicView = ({
                     : styles.sectionBaseContainer
                 }
                 content={section.content}
-                fontSize={16}>
+                fontSize={18}
+                color={'black'}>
                 {Array.isArray(section?.cards) &&
                   section.cards.map((card, cardIndex) => {
                     const CardComponent =

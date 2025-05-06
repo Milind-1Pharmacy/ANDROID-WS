@@ -1,6 +1,4 @@
-import React from 'react';
-
-import {
+import React, {
   memo,
   useContext,
   useEffect,
@@ -9,7 +7,6 @@ import {
   useCallback,
 } from 'react';
 import {
-  FlatList,
   HStack,
   IconButton,
   Input,
@@ -21,9 +18,9 @@ import {
 import {
   Animated,
   Dimensions,
-  Platform,
   StyleSheet,
   TextInput,
+  FlatList,
 } from 'react-native';
 import P1Styles from '@P1StyleSheet';
 import {useIsFocused} from '@react-navigation/native';
@@ -31,10 +28,8 @@ import {APIContext, FormStateContext, ToastContext} from '@contextProviders';
 import {ToastProfiles} from '@ToastProfiles';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {parseError} from '@helpers';
-import {useContextSelector} from 'use-context-selector';
 
-const {width: screenWidth, height} = Dimensions.get('window');
-const isDesktop = Platform.OS === 'web' && screenWidth > height;
+const {width: screenWidth} = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   header: {
@@ -63,8 +58,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderTopLeftRadius: 20,
     backgroundColor: '#ffffff',
-    marginLeft: isDesktop ? 10 : 0,
-    ...(isDesktop ? P1Styles.shadowTop : P1Styles.shadowTopLarge),
+    ...P1Styles.shadowTopLarge,
     width: '100%',
   },
   contentContainerStyle: {
@@ -99,6 +93,7 @@ const CloudSearch = (props: any) => {
     (args: any) => setSearchState(prev => ({...prev, ...args})),
     [],
   );
+
   const debounce = (debounceHandler: Function, delay: number) => {
     if (typingTimeout) {
       clearTimeout(typingTimeout);
@@ -108,12 +103,12 @@ const CloudSearch = (props: any) => {
     }, delay);
     setTypingTimeout(timeout);
   };
+
   const clearSearch = () => {
     setSearchState({
       searching: false,
       items: [],
     });
-
     setSearchKeyword('');
   };
 
@@ -141,6 +136,7 @@ const CloudSearch = (props: any) => {
     },
     [APIGet, props.searchURLGenerator, props.itemsParser, showToast],
   );
+
   const onSearchKeywordChange = (text: string) => {
     if (text.length >= 3) {
       setPartialSearchState({searching: true});
@@ -157,11 +153,7 @@ const CloudSearch = (props: any) => {
 
   useEffect(() => {
     Animated.timing(suggestionsBoxAnim, {
-      toValue: isFocused
-        ? screenWidth -
-          (isDesktop ? screenWidth * 0.1 : 0) -
-          (isDesktop ? screenWidth / 4 : props.disableGoBack ? 20 : 70)
-        : 0,
+      toValue: isFocused ? screenWidth - (props.disableGoBack ? 20 : 70) : 0,
       duration: 10,
       useNativeDriver: false,
     }).start();
@@ -184,26 +176,21 @@ const CloudSearch = (props: any) => {
   );
 
   return (
-    <VStack
-      h="100%"
-      bgColor={isDesktop ? '#EFEFEF' : '#2E6ACF'}
-      alignItems="flex-start">
+    <VStack h="100%" bgColor="#2E6ACF" alignItems="flex-start">
       <HStack style={styles.header}>
         {!props.disableGoBack && (
           <IconButton
             style={styles.backButton}
             onPress={() => props.navigation.goBack()}
-            icon={<FontAwesomeIcon icon="arrow-left" color="#808080" />}
+            icon={
+              <FontAwesomeIcon icon="arrow-left" color="#808080" size={20} />
+            }
           />
         )}
         <View
           style={{
             ...styles.searchBox,
-            width: isDesktop
-              ? screenWidth * 0.6
-              : props.disableGoBack
-              ? screenWidth - 40
-              : screenWidth - 90,
+            width: props.disableGoBack ? screenWidth - 40 : screenWidth - 90,
           }}>
           <Input
             ref={inputRef}
@@ -223,26 +210,13 @@ const CloudSearch = (props: any) => {
                 <FontAwesomeIcon
                   color="#808080"
                   icon="magnifying-glass"
+                  size={16}
                   style={{marginLeft: 10}}
                 />
               )
             }
-            InputRightElement={
-              isDesktop ? (
-                <IconButton
-                  icon={
-                    <FontAwesomeIcon color="#808080" size={20} icon={'xmark'} />
-                  }
-                  onPress={clearSearch}
-                />
-              ) : undefined
-            }
             _focus={{
-              // borderColor: 'transparent',
               backgroundColor: 'transparent',
-              borderWidth: 0,
-            }}
-            _web={{
               borderWidth: 0,
             }}
           />
@@ -250,16 +224,16 @@ const CloudSearch = (props: any) => {
       </HStack>
       <View style={styles.contentBase}>
         <FlatList
-          data={searchState.items}
-          keyExtractor={item => item?.id}
+          data={searchState?.items || []}
+          keyExtractor={(item, index) => item?.id || index.toString()}
           renderItem={renderItem}
-          initialNumToRender={searchState.items.length}
+          initialNumToRender={searchState?.items?.length || 0}
           windowSize={5}
           maxToRenderPerBatch={15}
           contentContainerStyle={styles.contentContainerStyle}
           ListEmptyComponent={
             <Text textAlign={'center'} style={{marginTop: 10}}>
-              Search to get results
+              {searchState.searching ? 'Searching...' : 'Search to get results'}
             </Text>
           }
         />

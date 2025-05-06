@@ -27,146 +27,21 @@ import {
   memo,
   useCallback,
 } from 'react';
-import {Dimensions, Platform, StyleSheet} from 'react-native';
+import {Dimensions, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LoadingScreen from '../commonComponents/LoadingScreen';
 import HorizontalScrollableSection from '../displayBlocks/Containers/HorizontalScrollableSection';
 import Counter from '../commonComponents/Counter';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import P1Badge from '../commonComponents/P1Badge';
-import {getCartTotalCalculator, parseError} from '@helpers';
-import {getCardByIndex} from '@HouseOfCards';
-const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
-import {faCartPlus} from '@fortawesome/free-solid-svg-icons';
+import {parseError} from '@helpers';
 import {useFocusEffect} from '@react-navigation/native';
 import {useContextSelector} from 'use-context-selector';
-const isDesktop = Platform.OS === 'web' && screenWidth > screenHeight;
-const card_type = 'product_image_title_date';
-const CardComponent = getCardByIndex(card_type);
-const desktopStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EFEFEF',
-    padding: 12,
-  },
-  header: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    borderRadius: 16,
-    padding: 8,
-  },
-  headerButton: {
-    marginRight: 10,
-    backgroundColor: 'white',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2E6ACF',
-  },
-  icon: {
-    color: '#2E6ACF',
-    height: 20,
-    width: 20,
-  },
-  badgeContainer: {
-    position: 'relative',
-    marginLeft: 10,
-  },
-  scrollView: {
-    flex: 1,
-    marginTop: 20,
-  },
-  contentContainer: {
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-  },
-  productImage: {
-    width: 400,
-    height: 400,
-    borderRadius: 10,
-  },
-  detailsContainer: {
-    flex: 1,
-    marginHorizontal: 15,
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 8,
-    maxWidth: 640,
-    height: '100%',
-  },
-  productName: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#2E6ACF',
-  },
-  priceTag: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 10,
-  },
-  divider: {
-    backgroundColor: '#ccc',
-    marginVertical: 10,
-    height: 1,
-  },
-  description: {
-    color: '#555',
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  manufacturer: {
-    color: '#777',
-    fontSize: 16,
-    marginTop: 10,
-  },
-  similarProductsSection: {
-    marginTop: 30,
-  },
-  similarProductsTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2E6ACF',
-    marginBottom: 10,
-  },
-  productCard: {
-    width: 270,
-  },
-  similarItemsContainer: {
-    backgroundColor: '#FFFFFF',
-    padding: 10,
-    borderRadius: 16,
-    marginVertical: 12,
-    paddingHorizontal: 8,
-    marginHorizontal: 0,
-    marginBottom: 88,
-  },
 
-  cartBar: {
-    backgroundColor: '#FFFFFFF',
-    borderWidth: 1,
-    borderColor: '#rgb(220, 220, 220)',
-    alignItems: 'center',
-    // justifyContent: 'center',
-    borderRadius: 16,
-    marginTop: 16,
-    width: 'auto',
-  },
-  counterContainer: {
-    backgroundColor: '#EFEFEF',
-    borderRadius: 16,
-    // justifyContent: 'space-between',
-    width: '100%',
-    minWidth: 150,
-  },
-});
 const mobileStyle = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA', // Light and modern background
+    backgroundColor: '#F5F7FA',
   },
   header: {
     flexDirection: 'row',
@@ -176,7 +51,7 @@ const mobileStyle = StyleSheet.create({
     paddingVertical: 5,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#D3DCE6', // Softer border color
+    borderBottomColor: '#D3DCE6',
   },
   headerButton: {
     backgroundColor: 'transparent',
@@ -189,13 +64,13 @@ const mobileStyle = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1A2B50', // Dark navy for readability
+    color: '#1A2B50',
   },
   headerIcons: {
     columnGap: 10,
   },
   scrollView: {
-    backgroundColor: '#F5F7FA', // More neutral background
+    backgroundColor: '#F5F7FA',
   },
   scrollViewContent: {
     backgroundColor: '#F5F7FA',
@@ -208,7 +83,7 @@ const mobileStyle = StyleSheet.create({
   },
   productCard: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF', // Pure white card for contrast
+    backgroundColor: '#FFFFFF',
     width: '88%',
     marginHorizontal: 'auto',
     borderRadius: 32,
@@ -226,10 +101,10 @@ const mobileStyle = StyleSheet.create({
     marginTop: 16,
   },
   productImage: {
-    width: '100%', // Full width
+    width: '100%',
     borderRadius: 32,
     marginHorizontal: 8,
-    resizeMode: 'cover', // Ensures the image fills the container properly
+    resizeMode: 'cover',
     maxHeight: 300,
   },
   itemDetails: {
@@ -246,11 +121,11 @@ const mobileStyle = StyleSheet.create({
   priceTag: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#F4A261', // Warm accent for pricing
+    color: '#F4A261',
     marginTop: 6,
   },
   description: {
-    color: '#778899', // Subtle grey for secondary text
+    color: '#778899',
     fontSize: 16,
   },
   manufacture: {
@@ -258,7 +133,6 @@ const mobileStyle = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
   },
-
   similarItemsContainer: {
     marginTop: 12,
     padding: 12,
@@ -266,7 +140,7 @@ const mobileStyle = StyleSheet.create({
     elevation: 3,
     maxWidth: '100%',
     marginBottom: 32,
-    backgroundColor: 'rgba(176, 196, 222, 0.294)', // Light fallback color
+    backgroundColor: 'rgba(176, 196, 222, 0.294)',
     width: '100%',
   },
   mainCounter: {
@@ -297,163 +171,9 @@ const mobileStyle = StyleSheet.create({
     width: 120,
     gap: 8,
   },
-  backgroundImage: {
-    opacity: 0.5, // adjust this for the blur effect on the background
-  },
-  absolute: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
 });
 
-const DesktopView = ({
-  renderData,
-  navigation,
-}: {
-  renderData: any;
-  navigation: any;
-}) => {
-  const cart = useContextSelector(FormStateContext, state => state.cart);
-  const {handleAdd, handleSubtract} = useContextSelector(
-    FormStateContext,
-    state => ({
-      handleAdd: state.handleAdd,
-      handleSubtract: state.handleSubtract,
-    }),
-  );
-
-  return (
-    <View style={desktopStyles.container}>
-      {/* Header */}
-      <HStack style={[desktopStyles.header]}>
-        <HStack alignItems="center">
-          <IconButton
-            onPress={navigation.goBack}
-            variant="solid"
-            style={desktopStyles.headerButton}
-            icon={
-              <FontAwesomeIcon icon="arrow-left" style={desktopStyles.icon} />
-            }
-          />
-          <Text style={desktopStyles.headerTitle}>Item Details</Text>
-        </HStack>
-        <HStack>
-          <IconButton
-            onPress={() =>
-              navigation.navigate('Search', {searchItem: renderData.name})
-            }
-            icon={
-              <FontAwesomeIcon
-                icon="magnifying-glass"
-                style={desktopStyles.icon}
-              />
-            }
-          />
-          <View style={desktopStyles.badgeContainer}>
-            {cart.items.length > 0 && (
-              <P1Badge
-                style={{
-                  height: 16,
-                  width: 16,
-                  borderRadius: 8,
-                  position: 'absolute',
-                  top: -2,
-                  right: 4,
-                }}>
-                {cart.items.length}
-              </P1Badge>
-            )}
-            <IconButton
-              onPress={() => startTransition(() => navigation.navigate('Cart'))}
-              icon={
-                <FontAwesomeIcon
-                  icon="cart-shopping"
-                  style={desktopStyles.icon}
-                />
-              }
-            />
-          </View>
-        </HStack>
-      </HStack>
-
-      {/* Main Content */}
-      <ScrollView style={desktopStyles.scrollView}>
-        <HStack style={desktopStyles.contentContainer}>
-          {/* Product Image */}
-          <Image
-            source={{uri: renderData.imageUrl}}
-            style={desktopStyles.productImage}
-            alt={renderData.name}
-          />
-
-          {/* Product Details */}
-          <View style={desktopStyles.detailsContainer}>
-            <Text style={desktopStyles.productName}>{renderData.name}</Text>
-            <Text style={desktopStyles.priceTag}>
-              MRP : ₹{renderData.price}
-            </Text>
-            <Divider style={desktopStyles.divider} />
-            <Text style={desktopStyles.description}>
-              {renderData.description}
-            </Text>
-            {renderData.manufacture && (
-              <Text style={desktopStyles.manufacturer}>
-                Manufactured by: {renderData.manufacture}
-              </Text>
-            )}
-            {/* Cart & Quantity Section */}
-            <HStack style={desktopStyles.cartBar}>
-              <Counter
-                value={
-                  cart.items.find(
-                    (cartItem: any) => cartItem.id === renderData.id,
-                  )?.qty || 0
-                }
-                zeroCounterLabel="Add to Cart"
-                add={() => handleAdd(renderData)}
-                subtract={() => handleSubtract(renderData)}
-                containerStyle={desktopStyles.counterContainer}
-                labelColor="#2E6ACF"
-                textSize={20}
-                price={renderData.price}
-              />
-            </HStack>
-          </View>
-        </HStack>
-
-        {/* Similar Products Section */}
-        {renderData.similarProduct?.length > 0 && (
-          <HorizontalScrollableSection
-            sectionBaseStyle={desktopStyles.similarItemsContainer}
-            containerStyle={{
-              paddingTop: 0,
-              overflow: 'hidden',
-              borderRadius: 8,
-              paddingLeft: 8,
-              gap: 16,
-            }}
-            content={{title: 'You Might Love These Too!'}}
-            fontSize={20}
-            fontWeight={'600'}>
-            {renderData.similarProduct.map((product: any, index: number) => {
-              return (
-                <CardComponent
-                  key={product.id + index}
-                  style={{width: 270}}
-                  {...product}
-                />
-              );
-            })}
-          </HorizontalScrollableSection>
-        )}
-      </ScrollView>
-    </View>
-  );
-};
-const MobileView = memo(
+const ItemDetailsView = memo(
   ({
     renderData,
     navigation,
@@ -495,6 +215,7 @@ const MobileView = memo(
         (scrollViewRef.current as any)?.scrollTo({x: 0, y: 0, animated: true});
       }
     }, [renderData.id]);
+
     return (
       <View style={mobileStyle.container}>
         <HStack
@@ -506,7 +227,11 @@ const MobileView = memo(
               variant="solid"
               style={mobileStyle.headerButton}
               icon={
-                <FontAwesomeIcon icon="arrow-left" style={mobileStyle.icon} />
+                <FontAwesomeIcon
+                  icon="arrow-left"
+                  style={mobileStyle.icon}
+                  size={12}
+                />
               }
               onPress={navigation.goBack}
             />
@@ -525,6 +250,7 @@ const MobileView = memo(
                 <FontAwesomeIcon
                   icon="magnifying-glass"
                   style={mobileStyle.icon}
+                  size={12}
                 />
               }
             />
@@ -552,6 +278,7 @@ const MobileView = memo(
                   <FontAwesomeIcon
                     icon="cart-shopping"
                     style={mobileStyle.icon}
+                    size={12}
                   />
                 }
               />
@@ -619,7 +346,7 @@ const MobileView = memo(
                         fontWeight: '500',
                         textAlign: 'left',
                       }}>
-                      Get it before it’s gone!
+                      Get it before it's gone!
                     </Text>
                   )}
                 </View>
@@ -652,7 +379,6 @@ const MobileView = memo(
                   }}
                   labelColor="#2E6ACF"
                   textSize={14}
-                  // price={renderData.price}
                   showPlusIcon={true}
                   borderRadius={8}
                   buttonPadding={2}
@@ -678,43 +404,18 @@ const MobileView = memo(
                 color="#36454F">
                 {renderData.similarProduct.map(
                   (product: any, index: number) => (
-                    <CardComponent
-                      key={product.id + index}
-                      style={{width: 200, height: 250}}
-                      imageStyle={{
-                        width: '96%',
-                        height: 120,
-                        objectFit: 'contain',
-                        marginBottom: 12,
-                        background: 'transparent',
-                      }}
-                      fallbackImageStyle={{
-                        width: 120,
-                        height: 120,
-                        objectFit: 'contain',
-                        marginBottom: 12,
-                      }}
-                      textBlockStyle={{padding: 10}}
-                      labelStyle={{fontSize: 14}}
-                      packagingTextStyle={{fontSize: 8}}
-                      priceSectionStyle={{marginBottom: 2}}
-                      dateLabelStyle={{fontSize: 8}}
-                      counterBorderRadius={8}
-                      {...product}
-                    />
+                    <View key={product.id + index} style={{width: 200}}>
+                      {/* Replace with your mobile card component */}
+                      <Image
+                        source={{uri: product.imageUrl}}
+                        alt={product.name}
+                        style={{width: 200, height: 200}}
+                      />
+                      <Text>{product.name}</Text>
+                      <Text>₹{product.price}</Text>
+                    </View>
                   ),
                 )}
-                {/* <CardComponent
-                  key={renderData.similarProduct[0].id}
-                  {...renderData.similarProduct[0]}
-                  style={{width: 200, height: 240}}
-                  imageStyle={{width: 80, height: 120}}
-                  textBlockStyle={{padding: 10}}
-                  labelStyle={{fontSize: 14}}
-                  packagingTextStyle={{fontSize: 8}}
-                  priceSectionStyle={{marginBottom: 2}}
-                  dateLabelStyle={{fontSize: 8}}
-                /> */}
               </HorizontalScrollableSection>
             )}
           </View>
@@ -763,7 +464,6 @@ const ItemDetails = (
     });
   }, [props.route.params.itemId, storeId, APIGet, showToast]);
 
-  // Use useFocusEffect to fetch data only when the screen is focused
   useFocusEffect(
     useCallback(() => {
       fetchRenderData();
@@ -774,10 +474,8 @@ const ItemDetails = (
     return <LoadingScreen />;
   }
 
-  return isDesktop ? (
-    <DesktopView renderData={renderData} navigation={props.navigation} />
-  ) : (
-    <MobileView
+  return (
+    <ItemDetailsView
       renderData={renderData}
       navigation={props.navigation}
       safeAreaInsets={safeAreaInsets}

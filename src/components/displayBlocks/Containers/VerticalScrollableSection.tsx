@@ -3,12 +3,13 @@ import {ScrollView, VStack, HStack} from 'native-base';
 import {StyleSheet, ViewStyle, Text, Dimensions, Platform} from 'react-native';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
-const isDesktop = Platform.OS === 'web' && screenWidth > screenHeight;const styles = StyleSheet.create({
+const isDesktop = Platform.OS === 'web' && screenWidth > screenHeight;
+const styles = StyleSheet.create({
   sectionBase: {
     marginHorizontal: 10,
     paddingVertical: 5,
     marginBottom: isDesktop ? 16 : 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'red',
   },
   itemStyle: {
     alignItems: 'center',
@@ -38,7 +39,13 @@ const VerticalScrollableSection: React.FC<VerticalSectionProps> = (
 
   return (
     <VStack style={{...styles.sectionBase, ...(sectionBaseStyle || {})}}>
-      <Text style={{fontWeight: '600', fontSize: props.fontSize !== undefined ? props.fontSize : 20, paddingVertical: 4}}>
+      <Text
+        style={{
+          fontWeight: '700',
+          fontSize: props.fontSize !== undefined ? props.fontSize : 16,
+          paddingVertical: 4,
+          color: 'black',
+        }}>
         {props.content.title}
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>

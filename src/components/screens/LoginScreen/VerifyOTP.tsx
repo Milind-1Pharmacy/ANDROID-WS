@@ -13,13 +13,7 @@ import {
   View,
   Keyboard,
 } from 'react-native';
-import {
-  Heading,
-  Image,
-  Input,
-  KeyboardAvoidingView,
-  Text,
-} from 'native-base';
+import {Heading, Image, Input, KeyboardAvoidingView, Text} from 'native-base';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AuthContext, ToastContext} from '@contextProviders';
 import {RootStackParamList} from 'App';
@@ -90,7 +84,11 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({navigation, route}) => {
       Keyboard.dismiss();
 
       try {
-        const response = await submitOTP(phone as string , otpValue, storeId as string);
+        const response = await submitOTP(
+          phone as string,
+          otpValue,
+          storeId as string,
+        );
 
         if (!response.data) {
           throw response;
@@ -214,7 +212,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({navigation, route}) => {
             />
           </View>
 
-          <Heading size="md" marginY={3} textAlign="center">
+          <Heading marginY={3} textAlign="center">
             Verify your Mobile Number
           </Heading>
 

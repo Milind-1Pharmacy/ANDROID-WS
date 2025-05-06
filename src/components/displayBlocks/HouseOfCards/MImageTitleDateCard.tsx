@@ -17,10 +17,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: 260,
     alignItems: 'center',
-    backgroundColor: '#F4F8FF',
+    backgroundColor: '#eef5ff',
     overflow: 'hidden',
     // minWidth: 240,
-    ...P1Styles.shadow,
+    // ...P1Styles.shadow,
+    borderWidth: 1,
+    borderColor: '#b8d0f774',
   },
   backgroundImg: {
     position: 'absolute',
@@ -31,7 +33,7 @@ const styles = StyleSheet.create({
   },
   img: {
     width: 224,
-    height: 180,
+    height: 160,
     marginTop: 10,
     borderRadius: 8,
     shadowColor: '#000',
@@ -56,7 +58,11 @@ const styles = StyleSheet.create({
     height: 'auto',
     width: '100%',
     padding: 15,
-    paddingTop: 0,
+    paddingTop: 10,
+    backgroundColor: '#fafafa',
+    zIndex: 100,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   label: {
     fontSize: 16,
@@ -175,7 +181,7 @@ const MImageTitleDateCard = (props: any) => {
           navigation.push('ItemDetails', {itemId: props.id}),
         )
       }>
-      <VStack style={cardBaseStyle} height={props.orderedOn ? 348 : 324}>
+      <VStack style={cardBaseStyle} height={props.orderedOn ? 336 : 324}>
         <Image
           src={props.imageUrl || TABLET_CAPSULE_IMAGE_FALLBACK}
           alt={props.name}

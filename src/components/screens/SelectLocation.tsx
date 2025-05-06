@@ -18,12 +18,9 @@ import MapView, {Marker, MarkerDragStartEndEvent} from 'react-native-maps';
 import {APIContext, FormStateContext, ToastContext} from '@contextProviders';
 import Permissions, {PERMISSIONS, RESULTS} from 'react-native-permissions';
 import {getCurrentAddress, getCurrentLocation} from '@location';
-import {getURL} from '@APIRepository';
-import {config} from '@APIConfig';
 import {ToastProfiles} from '@ToastProfiles';
-import { useContextSelector } from 'use-context-selector';
+import {useContextSelector} from 'use-context-selector';
 import React from 'react';
-
 
 const {width, height} = Dimensions.get('window');
 
@@ -38,7 +35,6 @@ const styles = StyleSheet.create({
   headerButton: {
     height: 50,
     width: 50,
-    margin: 0,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
@@ -48,7 +44,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     height: '100%',
     justifyContent: 'flex-end',
-    // overflowY: 'overlay',
   },
   mapBlock: {
     position: 'absolute',
@@ -75,32 +70,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#2E6ACF',
     ...P1Styles.shadow,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 });
 
 const SelectLocation = ({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'SelectLocation'>) => {
-  const {location, updateLocation} = useContextSelector(FormStateContext,state=>({
-    location: state.location,
-    updateLocation: state.updateLocation,
-  }));
-  const {APIPost} = useContext(APIContext);
+  const {location, updateLocation} = useContextSelector(
+    FormStateContext,
+    state => ({
+      location: state.location,
+      updateLocation: state.updateLocation,
+    }),
+  );
   const {showToast} = useContext(ToastContext);
   const mapRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const recenter = useCallback(
-    (coords: {lat: number; lng: number; address?: string} = location) => {
+    (coords = location) => {
       mapRef.current?.animateCamera({
         duration: 3000,
         center: {
-          latitude: coords.lat || location.lat,
-          longitude: coords.lng || location.lng,
+          latitude: coords.lat,
+          longitude: coords.lng,
         },
         zoom: 20,
         altitude: 400,
@@ -112,93 +104,57 @@ const SelectLocation = ({
   const updateAddress = useCallback(
     (position: any) => {
       setIsLoading(true);
-      if (Platform.OS === 'web') {
-        APIPost({
-          url: getURL({key: 'GET_ADDRESS'}),
-          body: {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          },
-          resolve: (response: any) => {
-            if (response.statusCode !== 200) {
-              throw response;
-            }
-            updateLocation({
-              address: response.data.address,
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-            recenter({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-            setIsLoading(false);
-          },
-          reject: (error: any) => {
-            showToast({
-              ...ToastProfiles.error,
-              title: 'Failed to fetch address',
-            });
-            setIsLoading(false);
-          },
-        });
-      } else {
-        getCurrentAddress(
-          position,
-          (address: any) => {
-            const {lat, lng} = address[0]?.position;
-            updateLocation({
-              address: address[0]?.formattedAddress,
-              lat: +lat,
-              lng: +lng,
-            });
-            recenter({lat: +lat, lng: +lng});
-            setIsLoading(false);
-          },
-          (error: any) => {
-            showToast({
-              ...ToastProfiles.error,
-              title: 'Failed to fetch address',
-            });
-            setIsLoading(false);
-          },
-        );
-      }
+      getCurrentAddress(
+        position,
+        (address: any) => {
+          const pos = address?.[0]?.position || {};
+          updateLocation({
+            address: address[0]?.formattedAddress,
+            lat: +pos.lat,
+            lng: +pos.lng,
+          });
+          recenter({lat: +pos.lat, lng: +pos.lng});
+          setIsLoading(false);
+        },
+        () => {
+          showToast({...ToastProfiles.error, title: 'Failed to fetch address'});
+          setIsLoading(false);
+        },
+      );
     },
-    [APIPost, updateLocation, recenter, showToast],
+    [updateLocation, recenter, showToast],
   );
 
   const setCurrentLocation = useCallback(async () => {
     setIsLoading(true);
-    if (Platform.OS === 'web') {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position: any) => {
-            updateAddress(position);
-          },
-          (error: any) => {
-            showToast({
-              ...ToastProfiles.error,
-              title: 'Failed to fetch location',
-            });
-            setIsLoading(false);
-          },
-          {enableHighAccuracy: true, timeout: 10000, maximumAge: 1000},
-        );
-      } else {
-        showToast({
-          ...ToastProfiles.error,
-          title: 'Geolocation is not supported by your browser',
+    const platformPermission = Platform.select({
+      ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
+      android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+    });
+
+    if (!platformPermission) {
+      showToast({
+        ...ToastProfiles.error,
+        title: 'Platform not supported for location permissions',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await Permissions.check(platformPermission);
+      if (response === RESULTS.GRANTED) {
+        getCurrentLocation(updateAddress, () => {
+          showToast({
+            ...ToastProfiles.error,
+            title: 'Failed to fetch location',
+          });
+          setIsLoading(false);
         });
-        setIsLoading(false);
-      }
-    } else {
-      try {
-        const response = await Permissions.check(
-          PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
-        );
-        if (response === RESULTS.GRANTED) {
-          getCurrentLocation(updateAddress, (error: any) => {
+      } else {
+        const newResponse = await Permissions.request(platformPermission);
+        if (newResponse === RESULTS.GRANTED) {
+          getCurrentLocation(updateAddress, () => {
             showToast({
               ...ToastProfiles.error,
               title: 'Failed to fetch location',
@@ -206,49 +162,36 @@ const SelectLocation = ({
             setIsLoading(false);
           });
         } else {
-          const newResponse = await Permissions.request(
-            PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
-          );
-          if (newResponse === RESULTS.GRANTED) {
-            getCurrentLocation(updateAddress, (error: any) => {
-              showToast({
-                ...ToastProfiles.error,
-                title: 'Failed to fetch location',
-              });
-              setIsLoading(false);
-            });
-          } else {
-            showToast({
-              ...ToastProfiles.error,
-              title: 'Location permission denied',
-            });
-            setIsLoading(false);
-          }
+          showToast({
+            ...ToastProfiles.error,
+            title: 'Location permission denied',
+          });
+          setIsLoading(false);
         }
-      } catch (error) {
-        showToast({
-          ...ToastProfiles.error,
-          title: 'Error requesting location permission',
-        });
-        setIsLoading(false);
       }
+    } catch (error) {
+      showToast({
+        ...ToastProfiles.error,
+        title: 'Error requesting location permission',
+      });
+      setIsLoading(false);
     }
   }, [updateAddress, showToast]);
 
   useEffect(() => {
-    recenter();
-  }, [location.lat, location.lng, location.address, recenter]);
+    if (location.lat && location.lng) {
+      recenter();
+    }
+  }, [location.lat, location.lng, recenter]);
 
   return (
     <>
-      {!(Platform.OS === 'web') && <StatusBar barStyle="light-content" />}
+      <StatusBar barStyle="light-content" />
       <View style={styles.contentContainer}>
         <MapView
           provider="google"
-          // @ts-ignore
-          googleMapsApiKey={config.gAPIKey}
-          onMapLoaded={() => recenter()}
           ref={mapRef}
+          onMapLoaded={() => recenter()}
           mapPadding={{top: 0, right: 0, bottom: height * 0.19, left: 0}}
           style={styles.mapBlock}
           initialCamera={{
@@ -256,29 +199,26 @@ const SelectLocation = ({
               latitude: location.lat || 18.457874,
               longitude: location.lng || 71.005823,
             },
-            zoom: location.lat && location.lng ? 20 : 0,
+            zoom: 20,
             altitude: 400,
             heading: 0,
             pitch: 0,
-          }}
-          region={{
-            latitude: location.lat || 18.457874,
-            longitude: location.lng || 71.005823,
-            latitudeDelta: 1,
-            longitudeDelta: 1,
           }}>
-          {location.lat && location.lng && (
-            <Marker
-              draggable
-              onDragEnd={(event: MarkerDragStartEndEvent) =>
-                updateAddress({coords: event.nativeEvent.coordinate})
-              }
-              coordinate={{
-                latitude: location.lat,
-                longitude: location.lng,
-              }}
-            />
-          )}
+          <Text>
+            {' '}
+            {location.lat && location.lng && (
+              <Marker
+                draggable
+                onDragEnd={(event: MarkerDragStartEndEvent) =>
+                  updateAddress({coords: event.nativeEvent.coordinate})
+                }
+                coordinate={{
+                  latitude: location.lat,
+                  longitude: location.lng,
+                }}
+              />
+            )}
+          </Text>
         </MapView>
         <VStack style={styles.dataBlock} space={2}>
           <HStack style={{...styles.header, top: -60, paddingHorizontal: 2}}>
@@ -290,6 +230,7 @@ const SelectLocation = ({
                   <FontAwesomeIcon
                     icon="arrow-left"
                     style={{color: '#2E6ACF'}}
+                    size={12}
                   />
                 }
                 onPress={navigation.goBack}
@@ -303,9 +244,7 @@ const SelectLocation = ({
                 py={1}
                 style={styles.changeLocationButton}
                 onPress={() => navigation.navigate('SearchAddress')}>
-                {!location.address || location.address === ''
-                  ? 'Search Location'
-                  : 'Change'}
+                {!location.address ? 'Search Location' : 'Change'}
               </Button>
               <Button
                 px={2}
@@ -334,9 +273,7 @@ const SelectLocation = ({
           <VStack space={2} p={4} pt={0}>
             <Text fontSize="sm">{location.address}</Text>
             <Button
-              disabled={
-                !location.address || location.address === '' || isLoading
-              }
+              disabled={!location.address || isLoading}
               style={styles.submitButton}
               onPress={() => navigation.navigate('AddressForm')}>
               {isLoading ? (

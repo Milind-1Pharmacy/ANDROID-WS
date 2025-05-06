@@ -82,6 +82,7 @@ const AnimatedToast = ({
         <FontAwesomeIcon
           icon={icon}
           style={{color: '#FFFFFF', height: 24, width: 24}}
+          size={24}
         />
       )}
       <View>
