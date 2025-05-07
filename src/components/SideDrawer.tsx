@@ -29,6 +29,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import P1AlertDialog from './commonComponents/P1AlertDialog';
 import {ToastProfiles} from '@ToastProfiles';
+import {background} from 'native-base/lib/typescript/theme/styled-system';
 
 type SideNavItem = {
   label: string;
@@ -65,6 +66,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '600',
+    lineHeight: 28,
   },
   sideNavBlock: {
     flex: 1,
@@ -211,7 +213,7 @@ const P1Drawer = memo((props: any) => {
   const handleNavPress = useCallback(
     (item: SideNavItem) => {
       if (item.screen !== activeItem) {
-        setActiveItem(item.screen);
+        // setActiveItem(item.screen);
         props.navActions[item.action](item);
         props.navigation.dispatch(DrawerActions.closeDrawer());
       }

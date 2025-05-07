@@ -37,6 +37,10 @@ import P1Badge from '../commonComponents/P1Badge';
 import {parseError} from '@helpers';
 import {useFocusEffect} from '@react-navigation/native';
 import {useContextSelector} from 'use-context-selector';
+import {getCardByIndex} from '@HouseOfCards';
+
+const card_type = 'product_image_title_date';
+const CardComponent = getCardByIndex(card_type);
 
 const mobileStyle = StyleSheet.create({
   container: {
@@ -67,7 +71,7 @@ const mobileStyle = StyleSheet.create({
     color: '#1A2B50',
   },
   headerIcons: {
-    columnGap: 10,
+    columnGap: 0,
   },
   scrollView: {
     backgroundColor: '#F5F7FA',
@@ -84,21 +88,16 @@ const mobileStyle = StyleSheet.create({
   productCard: {
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    width: '88%',
+    width: '92%',
     marginHorizontal: 'auto',
     borderRadius: 32,
     elevation: 3,
-    shadowColor: '#778899',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
     height: 'auto',
     paddingHorizontal: 16,
     paddingTop: 16,
     marginTop: 16,
+    marginBottom: 4,
+    maxHeight: 520,
   },
   productImage: {
     width: '100%',
@@ -137,7 +136,7 @@ const mobileStyle = StyleSheet.create({
     marginTop: 12,
     padding: 12,
     borderRadius: 2,
-    elevation: 3,
+
     maxWidth: '100%',
     marginBottom: 32,
     backgroundColor: 'rgba(176, 196, 222, 0.294)',
@@ -222,7 +221,9 @@ const ItemDetailsView = memo(
           px={1}
           py={2}
           style={[mobileStyle.header, {top: safeAreaInsets.top}]}>
-          <HStack alignItems="center">
+          <HStack
+            alignItems="center"
+            style={{backgroundColor: '#EFEFEF', borderRadius: 35}}>
             <IconButton
               variant="solid"
               style={mobileStyle.headerButton}
@@ -230,7 +231,8 @@ const ItemDetailsView = memo(
                 <FontAwesomeIcon
                   icon="arrow-left"
                   style={mobileStyle.icon}
-                  size={12}
+                  size={20}
+                  color="#2e6acf"
                 />
               }
               onPress={navigation.goBack}
@@ -250,7 +252,8 @@ const ItemDetailsView = memo(
                 <FontAwesomeIcon
                   icon="magnifying-glass"
                   style={mobileStyle.icon}
-                  size={12}
+                  size={20}
+                  color="#2e6acf"
                 />
               }
             />
@@ -258,11 +261,11 @@ const ItemDetailsView = memo(
               {cart.items.length > 0 && (
                 <P1Badge
                   style={{
-                    height: 16,
-                    width: 16,
+                    height: 18,
+                    width: 18,
                     borderRadius: 8,
                     position: 'absolute',
-                    top: -2,
+                    top: 0,
                     right: 4,
                   }}>
                   {cart.items.length}
@@ -278,7 +281,8 @@ const ItemDetailsView = memo(
                   <FontAwesomeIcon
                     icon="cart-shopping"
                     style={mobileStyle.icon}
-                    size={12}
+                    size={22}
+                    color="#2e6acf"
                   />
                 }
               />
@@ -318,7 +322,7 @@ const ItemDetailsView = memo(
                 )}
               </View>
               <View style={mobileStyle.mainCounter}>
-                <View style={{flex: 1}}>
+                <View style={{flex: 1, backgroundColor: 'transparent'}}>
                   {cart.items.find(
                     (cartItem: any) => cartItem?.id === renderData.id,
                   )?.qty > 0 ? (
@@ -404,18 +408,43 @@ const ItemDetailsView = memo(
                 color="#36454F">
                 {renderData.similarProduct.map(
                   (product: any, index: number) => (
-                    <View key={product.id + index} style={{width: 200}}>
-                      {/* Replace with your mobile card component */}
-                      <Image
-                        source={{uri: product.imageUrl}}
-                        alt={product.name}
-                        style={{width: 200, height: 200}}
-                      />
-                      <Text>{product.name}</Text>
-                      <Text>₹{product.price}</Text>
-                    </View>
+                    <CardComponent
+                      key={product.id + index}
+                      style={{width: 200, height: 250}}
+                      imageStyle={{
+                        width: '96%',
+                        height: 100,
+                        objectFit: 'contain',
+                        marginBottom: 12,
+                        background: 'transparent',
+                      }}
+                      fallbackImageStyle={{
+                        width: 100,
+                        height: 100,
+                        objectFit: 'contain',
+                        marginBottom: 12,
+                      }}
+                      textBlockStyle={{padding: 10}}
+                      labelStyle={{fontSize: 14}}
+                      packagingTextStyle={{fontSize: 8}}
+                      priceSectionStyle={{marginBottom: 2}}
+                      dateLabelStyle={{fontSize: 8}}
+                      counterBorderRadius={8}
+                      {...product}
+                    />
                   ),
                 )}
+                {/* <CardComponent
+                  key={renderData.similarProduct[0].id}
+                  {...renderData.similarProduct[0]}
+                  style={{width: 200, height: 240}}
+                  imageStyle={{width: 80, height: 120}}
+                  textBlockStyle={{padding: 10}}
+                  labelStyle={{fontSize: 14}}
+                  packagingTextStyle={{fontSize: 8}}
+                  priceSectionStyle={{marginBottom: 2}}
+                  dateLabelStyle={{fontSize: 8}}
+                /> */}
               </HorizontalScrollableSection>
             )}
           </View>

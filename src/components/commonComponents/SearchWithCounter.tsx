@@ -1,11 +1,11 @@
-import {useContext, useCallback, useMemo, memo, startTransition} from 'react';
+import {useCallback, useMemo, memo, startTransition} from 'react';
 import {CloudSearch, Counter} from '@commonComponents';
 import {HStack, Image, Text, VStack} from 'native-base';
 import {RUPEE_SYMBOL} from '@Constants';
+import {useContextSelector} from 'use-context-selector';
 import {FormStateContext} from '@contextProviders';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import {Dimensions} from 'react-native';
-import {useContextSelector} from 'use-context-selector';
 import React from 'react';
 
 type ItemType = {
@@ -19,30 +19,24 @@ type ItemType = {
 
 const ItemComponent = memo(
   ({
-    index,
     item,
     qty,
     onAdd,
     onSubtract,
-    isDesktop,
-    width,
     navigation,
   }: {
-    index: any;
     item: ItemType;
     qty: number;
     onAdd: (item: ItemType) => void;
     onSubtract: (item: ItemType) => void;
-    isDesktop: boolean;
-    width: number;
     navigation: any;
   }) => {
-    const imageSource = useMemo(() => ({uri: item.imageUrl}), [item.imageUrl]);
     const formattedPrice = useMemo(
       () =>
         (item.price ?? 0).toLocaleString('en-US', {maximumFractionDigits: 2}),
       [item.price],
     );
+
     return (
       <HStack
         alignItems="center"
@@ -54,15 +48,16 @@ const ItemComponent = memo(
         borderColor="#E0E0E0">
         <TouchableOpacity
           style={{
-            width: isDesktop ? width * 0.4 : width * 0.6,
+            width: '84%',
             overflow: 'hidden',
           }}
-          onPress={() =>
+          onPress={() => {
+
             startTransition(() =>
               navigation.navigate('ItemDetails', {itemId: item.id}),
-            )
-          }>
-          <HStack space={2} alignItems="center" maxWidth={550}>
+            );
+          }}>
+          <HStack space={2} alignItems="center">
             <Image
               source={{uri: item?.imageUrl}}
               alt={item.name}
@@ -73,8 +68,8 @@ const ItemComponent = memo(
                 objectFit: 'contain',
               }}
             />
-            <VStack width="85%" maxWidth="85%">
-              <Text style={{maxWidth: '90%'}} fontSize="sm" bold noOfLines={1}>
+            <VStack width="75%" maxWidth="75%">
+              <Text style={{maxWidth: '95%'}} fontSize="sm" bold noOfLines={1}>
                 {item.name}
               </Text>
               <Text color="gray.500" fontSize={13}>
@@ -99,8 +94,7 @@ const ItemComponent = memo(
           add={() => onAdd(item)}
           subtract={() => onSubtract(item)}
           containerStyle={{
-            width: isDesktop ? 120 : 112,
-            // borderRadius: 8,
+            width: 100,
             justifyContent: 'space-between',
             backgroundColor: '#2E6ACF',
           }}
@@ -113,9 +107,7 @@ const ItemComponent = memo(
     );
   },
   (prevProps, nextProps) =>
-    prevProps.item.id === nextProps.item.id &&
-    prevProps.qty === nextProps.qty &&
-    prevProps.isDesktop === nextProps.isDesktop,
+    prevProps.item.id === nextProps.item.id && prevProps.qty === nextProps.qty,
 );
 
 const SearchWithCounter = (props: any) => {
@@ -128,28 +120,23 @@ const SearchWithCounter = (props: any) => {
     FormStateContext,
     state => state.handleSubtract,
   );
-  const {width} = Dimensions.get('screen');
-  const isDesktop = width > 600;
 
   const renderItem = useCallback(
-    (item: any, index: number) => {
+    (item: any) => {
       const qty =
         cart.items.find((cartItem: any) => cartItem.id === item.id)?.qty || 0;
       return (
         <ItemComponent
-          index={item.id}
           key={item.id}
           item={item}
           qty={qty}
           onAdd={handleAdd}
           onSubtract={handleSubtract}
-          isDesktop={isDesktop}
-          width={width}
           navigation={props.navigation}
         />
       );
     },
-    [cart, handleAdd, handleSubtract, isDesktop, width],
+    [cart, handleAdd, handleSubtract, props.navigation],
   );
 
   return (

@@ -38,7 +38,13 @@ import {
   useIsPickupMode,
   usePickupMode,
 } from '@contextProviders';
-import {Input, NativeBaseProvider, View, extendTheme} from 'native-base';
+import {
+  Button,
+  Input,
+  NativeBaseProvider,
+  View,
+  extendTheme,
+} from 'native-base';
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {
   faAdd,
@@ -95,7 +101,7 @@ import {
 import {faWhatsapp} from '@fortawesome/free-brands-svg-icons';
 import {generateMedBackground} from '@assets';
 import SideDrawer from './src/components/SideDrawer';
-import {LoadingScreen} from '@commonComponents';
+import {LoadingScreen, TruckLoader} from '@commonComponents';
 import {Dimensions, Linking, Platform, Text} from 'react-native';
 import {APIGet} from '@APIHandler';
 import {getURL} from '@APIRepository';
@@ -225,7 +231,9 @@ const SelectLocation = React.lazy(() => import('@screens/SelectLocation'));
 const SupportScreen = React.lazy(() => import('@screens/SupportScreen'));
 const VerifyOTP = React.lazy(() => import('@screens/VerifyOTP'));
 const AddressForm = React.lazy(() => import('@screens/AddressForm'));
-const PrescriptionOrder = React.lazy(() => import('@screens/PrescriptionOrder'));
+const PrescriptionOrder = React.lazy(
+  () => import('@screens/PrescriptionOrder'),
+);
 const ItemsListing = React.lazy(() => import('@screens/ItemsListing'));
 const DynamicGridScreen = React.lazy(
   () => import('@screens/DynamicGridScreen'),
@@ -422,9 +430,17 @@ const AppNavigator = () => {
         {routes.map(route => (
           <Stack.Screen
             key={route.name}
-            name={route.name as keyof RootStackParamList}
-            component={route.component as React.ComponentType<any>}
-          />
+            name={route.name as keyof RootStackParamList}>
+            {props => (
+              <React.Suspense fallback={<LoadingScreen />}>
+                {route.component &&
+                  React.createElement(
+                    route.component as React.ComponentType<any>,
+                    props,
+                  )}
+              </React.Suspense>
+            )}
+          </Stack.Screen>
         ))}
       </Stack.Navigator>
     </View>
@@ -635,7 +651,6 @@ type StoreInfo = {
 // };
 
 function App(): JSX.Element {
-
   return (
     <NativeBaseProvider theme={_1PNativeBaseTheme}>
       <ToastProvider>
@@ -643,17 +658,26 @@ function App(): JSX.Element {
           <APIContextProvider>
             <PickupModeProvider>
               <FormStateProvider>
-                <NavigationContainer theme={_1PTheme} linking={linking()}>
-                  <View style={{flex: 1}}>
-                    <SideDrawer component={() => <AppNavigator />} />
-                  </View>
-                </NavigationContainer>
+                {/* <React.Suspense fallback={<LoadingScreen />}> */}
+                  <NavigationContainer theme={_1PTheme} linking={linking()}>
+                    <View style={{flex: 1}}>
+                      <SideDrawer component={() => <AppNavigator />} />
+                    </View>
+                  </NavigationContainer>
+                {/* </React.Suspense> */}
               </FormStateProvider>
             </PickupModeProvider>
           </APIContextProvider>
         </AuthContextProvider>
       </ToastProvider>
     </NativeBaseProvider>
+    // <NativeBaseProvider theme={_1PNativeBaseTheme}>
+    //   <View>
+    //     <Button onPress={() => window.alert('test')}>
+    //       <Text>Test</Text>
+    //     </Button>
+    //   </View>
+    // </NativeBaseProvider>
   );
 }
 

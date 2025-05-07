@@ -179,8 +179,6 @@ const styles = StyleSheet.create({
 });
 
 const MDescItemCard = (props: any) => {
-  console.log(props);
-
   const [collapsed, setCollapsed] = useState(true);
   const [contentHeight, setContentHeight] = useState(
     windowWidth >= 414 ? 400 : windowWidth >= 375 ? 250 : 180,

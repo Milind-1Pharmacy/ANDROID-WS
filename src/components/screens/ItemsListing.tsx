@@ -150,6 +150,7 @@ const ItemsListing = ({
               size={20}
               icon="cart-shopping"
               style={{color: '#FFFFFF'}}
+              color="white"
             />
           }
         />
