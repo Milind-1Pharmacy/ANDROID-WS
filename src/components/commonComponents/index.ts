@@ -14,6 +14,7 @@ import Cart from './Cart';
 import TimelineEvent from './TimelineEvent';
 import Header from './Header';
 import CartControlPanel from './CartControlPanel';
+import TruckLoader from './TruckLoader';
 
 export {
   BottomActionSheet,
@@ -32,4 +33,5 @@ export {
   TimelineEvent,
   Header,
   CartControlPanel,
+  TruckLoader,
 };

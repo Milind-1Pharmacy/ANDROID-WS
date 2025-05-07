@@ -73,7 +73,6 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
 
   const fetchRenderData = useCallback(
     async (onComplete: () => void = () => {}) => {
-      console.log('fetchRenderData');
 
       if (!hasStoreAccess) return;
 

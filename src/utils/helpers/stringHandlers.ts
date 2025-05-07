@@ -26,12 +26,7 @@ export const getInitials = (name?: string | null): string => {
   }
 
   // Handle multiple word names
-  if (wordCount > 1) {
-    const firstChar = nameSplit[0][0]?.toUpperCase() || '';
-    const lastChar = nameSplit[wordCount - 1][0]?.toUpperCase() || '';
-    return firstChar + lastChar;
-  }
 
   // Fallback
-  return '--';
+  return 'G';
 };
