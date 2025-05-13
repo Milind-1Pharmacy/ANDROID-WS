@@ -659,11 +659,11 @@ function App(): JSX.Element {
             <PickupModeProvider>
               <FormStateProvider>
                 {/* <React.Suspense fallback={<LoadingScreen />}> */}
-                  <NavigationContainer theme={_1PTheme} linking={linking()}>
-                    <View style={{flex: 1}}>
-                      <SideDrawer component={() => <AppNavigator />} />
-                    </View>
-                  </NavigationContainer>
+                <NavigationContainer theme={_1PTheme} linking={linking()}>
+                  <View style={{flex: 1}}>
+                    <SideDrawer component={() => <AppNavigator />} />
+                  </View>
+                </NavigationContainer>
                 {/* </React.Suspense> */}
               </FormStateProvider>
             </PickupModeProvider>

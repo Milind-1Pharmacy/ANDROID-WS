@@ -34,9 +34,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 4,
     backgroundColor: '#FEFEFE',
-    marginLeft: 8,
+    marginHorizontal: 8,
     paddingVertical: 8,
-    marginTop: 6,
+    marginTop: 3,
   },
 });
 

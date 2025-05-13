@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
   },
   contentContainerStyle: {
     width: isDesktop ? '99%' : '100%',
-    flex: 1,
+    flexGrow: 1,
     marginHorizontal: isDesktop ? 10 : 0,
     marginTop: isDesktop ? 10 : 0,
     borderTopRightRadius: 20,

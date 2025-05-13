@@ -1,4 +1,4 @@
-import React, {memo, useCallback, useEffect, useState} from 'react';
+import React, {memo, useEffect, useState, useMemo} from 'react';
 import P1Styles from '@P1StyleSheet';
 import {FlatList, Input, SearchIcon, Text, View} from 'native-base';
 import {Dimensions, RefreshControl, StyleSheet} from 'react-native';
@@ -78,100 +78,125 @@ const styles = StyleSheet.create({
   },
 });
 
+const MemoizedListItem = memo(
+  ({
+    item,
+    onPress,
+    id,
+    controlProps,
+  }: {
+    item: any;
+    onPress: any;
+    id: string;
+    controlProps: any;
+  }) => {
+    const Component = getCardByIndex(item.card_id);
+    if (!Component) {
+      console.error(`No component found for card_id: ${item.card_id}`);
+      return null;
+    }
+
+    return React.cloneElement(<Component />, {
+      onPress,
+      id,
+      item,
+      controlProps,
+    });
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.id === nextProps.id &&
+      JSON.stringify(prevProps.item) === JSON.stringify(nextProps.item) &&
+      JSON.stringify(prevProps.controlProps) ===
+        JSON.stringify(nextProps.controlProps)
+    );
+  },
+);
 const GridView = (props: any) => {
-  const [rawList, setRawList] = useState(props.list || []);
-  const [summaryBlocks, setSummaryBlocks] = useState(props.summaryBlock || []);
-  const [displayList, setDisplayList] = useState([]);
-  const [searchKeyword, setSearchKeyword] = useState('');
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [itemsCount, setItemsCount] = useState(
-    props.list
-      ? props.list.length
-      : props.sections
-      ? props.sections.reduce(
-          (count: number, section: any) =>
-            (count += section.cards ? section.cards.length : 0),
-          0,
-        )
-      : 0,
+
+  // Memoized derived values
+  const searchEnabled = props.searchEnabled !== false;
+  const itemClickActions = useMemo(
+    () => ({
+      push: navigation.push,
+      navigate: navigation.navigate,
+    }),
+    [navigation.push, navigation.navigate],
   );
 
-  const searchEnabled = props.searchEnabled == false ? false : true;
+  // Process data only when props change
+  const {displayList, itemsCount, sections} = useMemo(() => {
+    const rawList = props.list || [];
+    const sectionsData = props.sections || [];
 
-  const itemClickActions: {[key: string]: any} = {
-    push: navigation.push,
-    navigate: navigation.navigate,
-  };
-
-  useEffect(() => {
-    setRawList(props.list);
-  }, []);
-
-  useEffect(() => {
-    setSummaryBlocks(props.summaryBlocks);
-  }, [props.summaryBlocks]);
-
-  useEffect(() => {
-    setDisplayList(rawList);
-  }, [rawList]);
-
-  useEffect(() => {
-    setItemsCount(
-      props.list
-        ? props.list.length
-        : props.sections
-        ? props.sections.reduce(
-            (count: number, section: any) =>
-              (count += section.cards ? section.cards.length : 0),
-            0,
-          )
-        : 0,
-    );
-  }, [props.list, props.sections]);
-
-  useEffect(() => {
+    let filteredList = rawList;
     if (searchKeyword.length >= 3) {
-      setDisplayList(
-        rawList.filter((item: any) =>
-          (props.searchFilter || ((keyword: string, item: any) => true))(
-            searchKeyword,
-            item,
-          ),
+      filteredList = rawList.filter((item: any) =>
+        (props.searchFilter || ((keyword: string, item: any) => true))(
+          searchKeyword,
+          item,
         ),
       );
     }
-    if (searchKeyword.length === 0) {
-      setDisplayList(rawList);
-    }
-  }, [searchKeyword]);
 
-  const ListItem = React.memo(
-    ({
-      item,
-      onPress,
-      id,
-      controlProps,
-    }: {
-      item: any;
-      onPress: any;
-      id: string;
-      controlProps: any;
-    }) => {
-      const Component: React.FC<any> = getCardByIndex(item.card_id);
-      return (
-        <Component
-          key={
-            item.card_id + '-' + JSON.stringify(item) + Date.now().toString()
-          }
-          onPress={onPress}
-          id={id}
-          item={item}
-          controlProps={controlProps}
-        />
-      );
-    },
+    const count = props.list
+      ? filteredList.length
+      : sectionsData.reduce(
+          (count: number, section: any) =>
+            count + (section.cards ? section.cards.length : 0),
+          0,
+        );
+
+    return {
+      displayList: filteredList,
+      itemsCount: count,
+      sections: sectionsData.map((section: any) => ({
+        ...section,
+        data: section.cards || filteredList.filter(section.filter),
+      })),
+    };
+  }, [props.list, props.sections, props.searchFilter, searchKeyword]);
+
+  const renderItem = ({item}: {item: any}) => {
+
+    return (
+      <MemoizedListItem
+        item={(props.cardPropParser || ((item: any) => item))(item)}
+        onPress={() =>
+          (item.action in itemClickActions
+            ? itemClickActions[item.action as keyof typeof itemClickActions]
+            : () => {})(...(item.actionParams || []))
+        }
+        id={item.id}
+        controlProps={props.controlProps}
+      />
+    );
+  };
+
+  const renderSectionHeader = ({section}: any) => (
+    <View style={styles.sectionTitleContainer}>
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+    </View>
+  );
+
+  const renderEmptyComponent = () => (
+    <InfoScreen
+      containerStyle={{width: '100%', height: height}}
+      title={props.emptyListTitle || 'No items to display.'}
+    />
+  );
+
+  const renderFooterComponent = () => <View height={200} bg="#ffffff" />;
+
+  const refreshControl = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={() => (props.onRefresh || (() => {}))(setRefreshing)}
+    />
   );
 
   return (
@@ -199,16 +224,17 @@ const GridView = (props: any) => {
       )}
       <View
         style={[props.style, {flex: 1}]}
-        {...(!searchEnabled && !summaryBlocks ? {paddingTop: 3} : {})}>
+        {...(!searchEnabled && !props.summaryBlocks ? {paddingTop: 3} : {})}>
         {props.title && (
           <View
             style={{
               ...styles.titleBlock,
-              ...(summaryBlocks ? {} : {marginTop: 10}),
+              ...(props.summaryBlocks ? {} : {marginTop: 10}),
             }}>
-            {props.title && <Text style={styles.listTitle}>{props.title}</Text>}
+            <Text style={styles.listTitle}>{props.title}</Text>
           </View>
         )}
+
         {props.error ? (
           <InfoScreen
             title={
@@ -223,52 +249,19 @@ const GridView = (props: any) => {
             itemDimension={blockWidth / 2}
             style={props.style}
             bounces={!!props.onRefresh}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={() => (props.onRefresh || (() => {}))(setRefreshing)}
-              />
-            }
-            ListFooterComponent={() => <View height={250} bg="#FFFFFF" />}
+            refreshControl={refreshControl}
+            ListFooterComponent={renderFooterComponent}
             contentContainerStyle={{
               ...styles.listContentContainer,
               ...(props.contentContainerStyle || {}),
             }}
-            sections={props.sections.map((section: any) => ({
-              title: section.title,
-              data: section.cards || displayList.filter(section.filter),
-            }))}
-            ListEmptyComponent={() => (
-              <InfoScreen
-                containerStyle={{width: '100%'}}
-                title={'No items to display.'}
-              />
-            )}
+            sections={sections}
+            ListEmptyComponent={renderEmptyComponent} // Prevent initial empty state flicker
             keyExtractor={(item: any, index: number) =>
-              'card-' + index + '-' + JSON.stringify(item)
+              `card-${index}-${JSON.stringify(item)}`
             }
-            renderItem={({item}) => {
-              const Component: React.FC<any> = getCardByIndex(item.card_id);
-
-              return (
-                <Component
-                  key={item.card_id + '-' + JSON.stringify(item)}
-                  onPress={() =>
-                    (itemClickActions[item.action as string] || (() => {}))(
-                      ...(item.actionParams || []),
-                    )
-                  }
-                  id={item.id}
-                  item={(props.cardPropParser || ((item: any) => item))(item)}
-                  controlProps={props.controlProps}
-                />
-              );
-            }}
-            renderSectionHeader={({section}: any) => (
-              <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-              </View>
-            )}
+            renderItem={renderItem}
+            renderSectionHeader={renderSectionHeader}
           />
         ) : (
           <FlatGrid
@@ -276,47 +269,22 @@ const GridView = (props: any) => {
             spacing={0}
             style={props.style}
             maxItemsPerRow={1}
-            refreshControl={
-              <RefreshControl
-                progressViewOffset={-50}
-                refreshing={refreshing}
-                onRefresh={() => (props.onRefresh || (() => {}))(setRefreshing)}
-              />
-            }
-            ListEmptyComponent={() => (
-              <InfoScreen
-                containerStyle={{width: '100%', height: height}}
-                title={'No items to display.'}
-              />
-            )}
-            ListFooterComponent={() => <View height={200} bg="#ffffff" />}
+            refreshControl={refreshControl}
+            ListEmptyComponent={renderEmptyComponent} // Prevent initial empty state flicker
+            ListFooterComponent={renderFooterComponent}
             contentContainerStyle={{
               ...styles.listContentContainer,
               ...(props.contentContainerStyle || {}),
             }}
             keyExtractor={(item: any, index: number) =>
-              'card-' + index + '-' + JSON.stringify(item)
+              `card-${index}-${JSON.stringify(item)}`
             }
             data={displayList}
             showsVerticalScrollIndicator={false}
-            initialNumToRender={itemsCount}
-            renderItem={({item}: {item: any}) => {
-              const Component: React.FC<any> = getCardByIndex(item.card_id);
-
-              return (
-                <Component
-                  key={item.card_id + '-' + JSON.stringify(item)}
-                  onPress={() =>
-                    (itemClickActions[item.action as string] || (() => {}))(
-                      ...(item.actionParams || []),
-                    )
-                  }
-                  id={item.id}
-                  item={(props.cardPropParser || ((item: any) => item))(item)}
-                  controlProps={props.controlProps}
-                />
-              );
-            }}
+            initialNumToRender={Math.min(itemsCount, 10)} // Render fewer initial items
+            windowSize={10} // Optimize scroll performance
+            updateCellsBatchingPeriod={50} // Batch updates
+            renderItem={renderItem}
           />
         )}
       </View>
@@ -324,4 +292,13 @@ const GridView = (props: any) => {
   );
 };
 
-export default memo(GridView);
+export default memo(GridView, (prevProps, nextProps) => {
+  // Only re-render if these critical props change
+  return (
+    prevProps.list === nextProps.list &&
+    prevProps.sections === nextProps.sections &&
+    prevProps.error === nextProps.error &&
+    prevProps.title === nextProps.title &&
+    prevProps.searchEnabled === nextProps.searchEnabled
+  );
+});

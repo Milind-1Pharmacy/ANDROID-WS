@@ -6,13 +6,16 @@ import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from 'App';
 import {Counter} from '@commonComponents';
+import {useContextSelector} from 'use-context-selector';
+import {FormStateContext} from '@contextProviders';
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     width: '100%',
     padding: 4,
-    maxHeight: 116,
+    maxHeight: 136,
+    marginHorizontal: 0,
   },
   contentRow: {
     flexDirection: 'row',
@@ -34,6 +37,8 @@ const styles = StyleSheet.create({
   detailsContainer: {
     flex: 1,
     paddingVertical: 6,
+    justifyContent: 'space-between',
+    height: '100%',
   },
   title: {
     fontSize: 14,
@@ -85,14 +90,15 @@ const styles = StyleSheet.create({
   },
   addToCartSection: {
     marginTop: 0,
+    marginRight: 16,
   },
   counterContainer: {
-    backgroundColor: '#2E6ACF',
+    backgroundColor: '#2e6acf',
     height: 36,
-    width: '90%',
+    // width: '80%',
     flexDirection: 'row',
     alignItems: 'center',
-    maxWidth: 350,
+    // maxWidth: 240,
   },
 });
 
@@ -117,6 +123,7 @@ const MProductCounterCard = ({
 }) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const cart = useContextSelector(FormStateContext, state => state.cart);
 
   // const normalizeCartItem = (cartItem: any) => ({
   //   id: cartItem.id,
@@ -176,7 +183,10 @@ const MProductCounterCard = ({
             <View style={styles.addToCartSection}>
               <Counter
                 containerStyle={styles.counterContainer}
-                value={controlProps.getCounterValue(item)}
+                value={
+                  cart.items.find((cartItem: any) => cartItem.id === item.id)
+                    ?.qty || 0
+                }
                 zeroCounterLabel="Add to Cart"
                 add={() => controlProps.add(item)}
                 subtract={() => controlProps.subtract(item)}

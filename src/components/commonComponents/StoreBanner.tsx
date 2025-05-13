@@ -212,7 +212,6 @@ const StoreBanner = (props: any) => {
                       zIndex: 1,
                       backgroundColor: '#0ebd0e',
                       color: '#fff',
-                      padding: 2,
                       height: 20,
                       width: 20,
                       fontSize: 12,

@@ -82,7 +82,7 @@ const mobileStyle = StyleSheet.create({
   },
   contentContainer: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     gap: 16,
   },
   productCard: {
@@ -91,36 +91,37 @@ const mobileStyle = StyleSheet.create({
     width: '92%',
     marginHorizontal: 'auto',
     borderRadius: 32,
-    elevation: 3,
     height: 'auto',
     paddingHorizontal: 16,
-    paddingTop: 16,
     marginTop: 16,
-    marginBottom: 4,
-    maxHeight: 520,
+    borderWidth: 1,
+    borderColor: '#b8d0f790',
+    maxHeight: 524,
+    justifyContent: 'center',
   },
   productImage: {
     width: '100%',
     borderRadius: 32,
     marginHorizontal: 8,
-    resizeMode: 'cover',
+    resizeMode: 'contain',
     maxHeight: 300,
   },
   itemDetails: {
     padding: 12,
     width: '100%',
+    maxHeight: 160,
   },
   label: {
     fontSize: 20,
     fontWeight: '500',
     color: '#1A2B50',
-    lineHeight: 28,
+    lineHeight: 22,
     textAlign: 'left',
   },
   priceTag: {
     fontSize: 16,
-    fontWeight: '400',
-    color: '#F4A261',
+    fontWeight: '500',
+    color: '#6190f4',
     marginTop: 6,
   },
   description: {
@@ -138,7 +139,6 @@ const mobileStyle = StyleSheet.create({
     borderRadius: 2,
 
     maxWidth: '100%',
-    marginBottom: 32,
     backgroundColor: 'rgba(176, 196, 222, 0.294)',
     width: '100%',
   },
@@ -150,12 +150,12 @@ const mobileStyle = StyleSheet.create({
     marginTop: 4,
     backgroundColor: '#2e6acf',
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: '#2e6acf',
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
     width: '100%',
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   counterLabel: {
     fontSize: 14,
@@ -412,19 +412,20 @@ const ItemDetailsView = memo(
                       key={product.id + index}
                       style={{width: 200, height: 250}}
                       imageStyle={{
-                        width: '96%',
-                        height: 100,
-                        objectFit: 'contain',
-                        marginBottom: 12,
+                        width: '88%',
+                        height: 90,
+                        objectFit: 'cover',
+                        marginBottom: 4,
                         background: 'transparent',
+                        marginHorizontal: 8,
                       }}
                       fallbackImageStyle={{
                         width: 100,
-                        height: 100,
-                        objectFit: 'contain',
-                        marginBottom: 12,
+                        height: 90,
+                        objectFit: 'cover',
+                        marginBottom: 4,
                       }}
-                      textBlockStyle={{padding: 10}}
+                      textBlockStyle={{padding: 8}}
                       labelStyle={{fontSize: 14}}
                       packagingTextStyle={{fontSize: 8}}
                       priceSectionStyle={{marginBottom: 2}}

@@ -25,8 +25,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginHorizontal: 16,
     marginVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E8EFF8',
+    // borderWidth: 1,
+    // borderColor: '#E8EFF8',
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -36,14 +36,15 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
       },
       android: {
-        elevation: 3,
+        elevation: 2,
       },
     }),
   },
   titleBlock: {
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E8EFF8',
+    borderLeftWidth: 3,
+    borderLeftColor: '#2E6ACF',
     padding: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -51,8 +52,8 @@ const styles = StyleSheet.create({
   },
   titleBorder: {
     position: 'absolute',
-    left: 0,
-    top: 0,
+    left: -2,
+    top: -2,
     bottom: 0,
     width: 4,
     backgroundColor: '#2E6ACF',
@@ -219,7 +220,6 @@ const MDescItemCard = (props: any) => {
       style={styles.cardBase}
       activeOpacity={0.9}>
       <View style={styles.titleBlock}>
-        <View style={styles.titleBorder} />
         <HStack
           alignItems="center"
           justifyContent="space-between"

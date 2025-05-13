@@ -1,5 +1,5 @@
 import React, {useContext, useState} from 'react';
-import {Dimensions, StyleSheet} from 'react-native';
+import {Dimensions, StyleSheet, Platform, Alert, Linking} from 'react-native';
 import {
   FlatList,
   HStack,
@@ -19,6 +19,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {Buffer} from 'buffer';
+import {
+  check,
+  request,
+  PERMISSIONS,
+  RESULTS,
+  openSettings,
+} from 'react-native-permissions';
 
 // Contexts
 import {
@@ -56,7 +63,6 @@ import {uploadToServer} from '@fileHandler';
 import {useContextSelector} from 'use-context-selector';
 
 const {width: screenWidth} = Dimensions.get('window');
-
 const styles = StyleSheet.create({
   header: {
     width: '100%',
@@ -202,6 +208,55 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
   const cartTotalCalculator = getCartTotalCalculator(appMode as string);
   const cartBodyProcessor = getCartBodyProcessor(appMode as string);
 
+  // ======================
+  // Permission Handling
+  // ======================
+  const requestCameraPermission = async (): Promise<boolean> => {
+    let cameraPermission;
+    let storagePermission;
+
+    if (Platform.OS === 'android') {
+      cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
+      if (Platform.Version >= 33) {
+        storagePermission = await check(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES);
+      } else {
+        storagePermission = await check(
+          PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
+        );
+      }
+
+      if (
+        cameraPermission === RESULTS.DENIED ||
+        storagePermission === RESULTS.DENIED
+      ) {
+        cameraPermission = await request(PERMISSIONS.ANDROID.CAMERA);
+        storagePermission =
+          Platform.Version >= 33
+            ? await request(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES)
+            : await request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+      }
+
+      const allGranted =
+        cameraPermission === RESULTS.GRANTED &&
+        storagePermission === RESULTS.GRANTED;
+
+      return allGranted;
+    }
+
+    if (Platform.OS === 'ios') {
+      const iosCameraPermission = await check(PERMISSIONS.IOS.CAMERA);
+
+      if (iosCameraPermission === RESULTS.DENIED) {
+        const requestResult = await request(PERMISSIONS.IOS.CAMERA);
+        return requestResult === RESULTS.GRANTED;
+      }
+
+      return iosCameraPermission === RESULTS.GRANTED;
+    }
+
+    return false;
+  };
+
   const toggleOrderSPDialogOpen = () =>
     setOrderSPDialogOpen(!orderSPDialogOpen);
   const toggleLogOutDialogOpen = () => setLogOutDialogOpen(!logOutDialogOpen);
@@ -226,61 +281,118 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
     });
   };
 
-  const handleImageUpload = (response: any) => {
-    if (!response?.assets?.[0]) return;
+  // ======================
+  // Image Handling
+  // ======================
+  const handleImageUpload = async (response: any) => {
+    if (!response?.assets?.[0]) {
+      console.log('No image selected or captured');
+      showToast({
+        ...ToastProfiles.error,
+        title: 'No image was selected',
+        id: `no-image-selected-${Date.now()}`, // Add timestamp to make unique
+        origin: 'top',
+      });
+      return;
+    }
 
     const image = response.assets[0];
-    const fileName =
-      image.fileName ||
-      `prescription-${Date.now()}.${extensionFromBase64(image.uri)}`;
+    console.log('Image details:', {
+      uri: image.uri,
+      type: image.type,
+      fileSize: image.fileSize,
+      width: image.width,
+      height: image.height,
+      base64: image.base64 ? `${image.base64.substring(0, 30)}...` : 'none',
+    });
 
-    uploadToServer(
-      {
-        data: Buffer.from(image.base64 || '', 'base64'),
-        name: fileName,
-        type: image.type || mimeFromBase64(image.uri),
-      },
-      {APIPost},
-    )
-      .then((res: any) => {
-        APIPost({
-          url: getURL({key: 'PRESCRIPTION'}),
-          body: {imageUrl: res},
-        })
-          .then((response: any) => {
-            updateCart({
-              prescriptionIds: [
-                ...(cart.prescriptionIds || []),
-                response.data.id,
-              ],
-            });
-            setAddedPrescriptions([
-              ...addedPrescriptions,
-              {id: response.data.id, imageUrl: res},
-            ]);
-          })
-          .catch(handlePrescriptionSaveError);
-      })
-      .catch(handleImageUploadError);
+    // Validate image
+    if (!image.uri || (!image.base64 && Platform.OS === 'android')) {
+      showToast({
+        ...ToastProfiles.error,
+        title: 'Invalid image data',
+        id: `invalid-image-data-${Date.now()}`, // Add timestamp to make unique
+        origin: 'top',
+      });
+      return;
+    }
+
+    try {
+      const fileName =
+        image.fileName ||
+        `prescription-${Date.now()}.${extensionFromBase64(image.uri)}`;
+
+      console.log('Starting image upload...');
+      const uploadResponse = await uploadToServer(
+        {
+          data: Buffer.from(image.base64 || '', 'base64'),
+          name: fileName,
+          type: image.type || mimeFromBase64(image.uri),
+        },
+        {APIPost},
+      );
+
+      console.log('Upload successful, saving prescription...');
+      const prescriptionResponse = await APIPost({
+        url: getURL({key: 'PRESCRIPTION'}),
+        body: {imageUrl: uploadResponse},
+      });
+
+      console.log('Prescription saved successfully');
+      updateCart({
+        prescriptionIds: [
+          ...(cart.prescriptionIds || []),
+          prescriptionResponse.data.id,
+        ],
+      });
+      setAddedPrescriptions([
+        ...(Array.isArray(addedPrescriptions) ? addedPrescriptions : []),
+        {id: prescriptionResponse.data.id, imageUrl: uploadResponse},
+      ]);
+
+      showToast({
+        ...ToastProfiles.success,
+        title: 'Prescription uploaded successfully',
+        id: `prescription-upload-success-${Date.now()}`, // Add timestamp to make unique
+        origin: 'top',
+      });
+    } catch (error) {
+      console.error('Image processing error:', error);
+      handleImageProcessingError(error);
+    }
   };
 
-  const handlePrescriptionSaveError = (error: any) => {
+  const handleImageProcessingError = (error: any) => {
+    const errorDetails = parseError(error);
+    console.log('Image processing failed:', errorDetails);
+
     showToast({
       ...ToastProfiles.error,
-      title: parseError(error).message,
-      id: 'prescription-save-error',
+      title: errorDetails.message || 'Failed to process image',
+      id: `image-processing-error-${Date.now()}`, // Add timestamp to make unique
       origin: 'top',
     });
   };
 
-  const handleImageUploadError = (error: any) => {
-    showToast({
-      ...ToastProfiles.error,
-      title: parseError(error).message,
-      id: 'image-upload-error',
-      origin: 'top',
-    });
-  };
+  // const handlePrescriptionSaveError = (error: any) => {
+  //   console.log('ERROR==LOL==========', parseError(error));
+  //   showToast({
+  //     ...ToastProfiles.error,
+  //     title: parseError(error).message,
+  //     id: 'prescription-save-error',
+  //     origin: 'top',
+  //   });
+  // };
+
+  // const handleImageUploadError = (error: any) => {
+  //   console.log('LOL=====', error);
+  //   showToast({
+  //     ...ToastProfiles.error,
+  //     title: parseError(error).message,
+  //     id: 'image-upload-error',
+  //     origin: 'top',
+  //   });
+  // };
 
   const removePrescription = (id: string) => {
     const updatedPrescriptions = addedPrescriptions.filter(
@@ -294,32 +406,106 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
     setAddedPrescriptions(updatedPrescriptions);
   };
 
-  const takePhoto = () => {
+  // ======================
+  // Camera/Gallery Functions
+  // ======================
+  const takePhoto = async () => {
     if (!authStatus.loggedIn) {
       toggleLogOutDialogOpen();
       return;
     }
 
-    launchCamera({
-      mediaType: 'photo',
-      quality: 0.3,
-      includeBase64: true,
-      saveToPhotos: true,
-    }).then(handleImageUpload);
+    try {
+      const hasPermission = await requestCameraPermission();
+      console.log('Camera permission:', hasPermission);
+
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Denied',
+          'Camera and storage permissions are required to take photos. Please enable them in settings.',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {text: 'Open Settings', onPress: () => Linking.openSettings()},
+          ],
+        );
+        return;
+      }
+
+      console.log('Launching camera...');
+      const result = await launchCamera({
+        mediaType: 'photo',
+        quality: 0.3,
+        includeBase64: true,
+        saveToPhotos: true,
+        cameraType: 'back',
+      });
+
+      console.log('Camera result:', result);
+      if (result.didCancel) {
+        console.log('User cancelled camera');
+        return;
+      }
+
+      await handleImageUpload(result);
+    } catch (error) {
+      console.error('Camera error:', error);
+      handleImageProcessingError(error);
+    }
   };
 
-  const pickImage = () => {
+  const pickImage = async () => {
     if (!authStatus.loggedIn) {
       toggleLogOutDialogOpen();
       return;
     }
 
-    launchImageLibrary({
-      mediaType: 'photo',
-      quality: 0.3,
-      includeBase64: true,
-    }).then(handleImageUpload);
+    try {
+      if (Platform.OS === 'android') {
+        const hasPermission = await requestCameraPermission();
+        if (!hasPermission) {
+          showToast({
+            ...ToastProfiles.error,
+            title: 'Storage permission denied',
+            id: `storage-permission-denied-${Date.now()}`, // Add timestamp to make unique
+            origin: 'top',
+          });
+          return;
+        }
+      }
+
+      console.log('Launching image picker...');
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.3,
+        includeBase64: true,
+        selectionLimit: 1,
+      });
+
+      console.log('Image picker result:', result);
+      if (result.didCancel) {
+        console.log('User cancelled image picker');
+        return;
+      }
+
+      await handleImageUpload(result);
+    } catch (error) {
+      console.error('Image picker error:', error);
+      handleImageProcessingError(error);
+    }
   };
+
+  // const pickImage = () => {
+  //   if (!authStatus.loggedIn) {
+  //     toggleLogOutDialogOpen();
+  //     return;
+  //   }
+
+  //   launchImageLibrary({
+  //     mediaType: 'photo',
+  //     quality: 0.3,
+  //     includeBase64: true,
+  //   }).then(handleImageUpload);
+  // };
 
   const validateOrder = () => {
     if (cart.items.length === 0) {

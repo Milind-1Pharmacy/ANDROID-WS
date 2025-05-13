@@ -3,7 +3,11 @@ import {TABLET_CAPSULE_IMAGE_FALLBACK} from '@Constants';
 import P1Styles from '@P1StyleSheet';
 import moment from 'moment';
 import {HStack, Image, Text, VStack, View} from 'native-base';
-import {StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from 'App';
@@ -26,8 +30,8 @@ const styles = StyleSheet.create({
   },
   backgroundImg: {
     position: 'absolute',
-    width: 28,
-    height: 28,
+    width: '100%',
+    height: '100%',
     opacity: 0.24,
     transform: [{scale: 1.2}],
   },
@@ -107,8 +111,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     backgroundColor: '#4ce1ff79',
     paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 2,
+    borderRadius: 8,
     marginVertical: 4,
   },
   priceSection: {
@@ -175,7 +178,7 @@ const MImageTitleDateCard = (props: any) => {
     props.fallbackImageStyle,
   ]);
   return (
-    <TouchableOpacity
+    <TouchableWithoutFeedback
       onPress={() =>
         startTransition(() =>
           navigation.push('ItemDetails', {itemId: props.id}),
@@ -184,14 +187,14 @@ const MImageTitleDateCard = (props: any) => {
       <VStack style={cardBaseStyle} height={props.orderedOn ? 336 : 324}>
         <Image
           src={props.imageUrl || TABLET_CAPSULE_IMAGE_FALLBACK}
-          alt={props.name}
+          alt={props.name || 'Tablet&Items'}
           style={styles.backgroundImg}
           blurRadius={20}
         />
         <Image
           src={props.imageUrl || TABLET_CAPSULE_IMAGE_FALLBACK}
           // src="https://assets.truemeds.in/Images/ProductImage/TM-TACR1-078605/dolo-650-mg-tablet-10_dolo-650-mg-tablet-10--TM-TACR1-078605_2.png?width=320"
-          alt={props.name}
+          alt={props.name || 'Tablets&Items'}
           style={
             props.imageUrl?.toString() !==
             TABLET_CAPSULE_IMAGE_FALLBACK.toString()
@@ -271,7 +274,7 @@ const MImageTitleDateCard = (props: any) => {
           />
         </VStack>
       </VStack>
-    </TouchableOpacity>
+    </TouchableWithoutFeedback>
   );
 };
 

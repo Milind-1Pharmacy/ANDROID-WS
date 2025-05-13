@@ -11,7 +11,6 @@ import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faCirclePlus, faMinus, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {RUPEE_SYMBOL} from '@Constants';
 
-// Move dimensions calculation outside component
 const SCREEN_DIMENSIONS = Dimensions.get('screen');
 const IS_DESKTOP =
   Platform.OS === 'web' && SCREEN_DIMENSIONS.width > SCREEN_DIMENSIONS.height;

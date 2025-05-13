@@ -112,26 +112,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   prescriptionBlock: {
-    padding: 5,
+    padding: 2,
   },
   prescriptionItem: {
-    width: 35,
-    height: 35,
+    width: 58,
+    height: 48,
     position: 'relative',
     marginRight: 5,
   },
   prescriptionThumbnail: {
-    width: 35,
-    height: 35,
-    borderRadius: 10,
+    width: 54,
+    height: 54,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#DADADA',
     position: 'absolute',
   },
   prescriptionRemoveButton: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: 0,
+    right: 0,
   },
   prescriptionPreviewOverlay: {
     position: 'absolute',
@@ -363,14 +363,6 @@ const CartControlPanel = memo(
     useEffect(() => {
       (shippingType ? collapse : expand)();
     }, [shippingType]);
-
-    // console.log('Logged in:', authStatus.loggedIn);
-    // console.log('App mode:', appMode);
-    // console.log('Locations loaded:', locationsReference.loaded);
-    // console.log('Locations list:', locationsReference.list);
-    // console.log('Selected location:', selectedLocation);
-    // console.log('openCLoseAnim value:', openCLoseAnim);
-    // console.log(storeConfig);
 
     return (
       <>
