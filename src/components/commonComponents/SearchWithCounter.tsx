@@ -39,6 +39,7 @@ const ItemComponent = memo(
 
     return (
       <HStack
+        id={item.id}
         alignItems="center"
         justifyContent="space-between"
         px={4}
@@ -52,7 +53,6 @@ const ItemComponent = memo(
             overflow: 'hidden',
           }}
           onPress={() => {
-
             startTransition(() =>
               navigation.navigate('ItemDetails', {itemId: item.id}),
             );

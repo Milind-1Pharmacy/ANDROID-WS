@@ -128,8 +128,12 @@ const ItemsListing = ({
   const onRefresh = useCallback(
     (setRefreshing: Function) => {
       setRefreshing(true);
+      setLoading(true);
       fetchRenderData({
-        onCompleteCallback: () => setRefreshing(false),
+        onCompleteCallback: () => {
+          setRefreshing(false);
+          setLoading(false);
+        },
         isRefreshing: true,
       });
     },

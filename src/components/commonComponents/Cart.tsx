@@ -286,7 +286,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
   // ======================
   const handleImageUpload = async (response: any) => {
     if (!response?.assets?.[0]) {
-      console.log('No image selected or captured');
       showToast({
         ...ToastProfiles.error,
         title: 'No image was selected',
@@ -297,15 +296,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
     }
 
     const image = response.assets[0];
-    console.log('Image details:', {
-      uri: image.uri,
-      type: image.type,
-      fileSize: image.fileSize,
-      width: image.width,
-      height: image.height,
-      base64: image.base64 ? `${image.base64.substring(0, 30)}...` : 'none',
-    });
-
     // Validate image
     if (!image.uri || (!image.base64 && Platform.OS === 'android')) {
       showToast({
@@ -321,8 +311,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
       const fileName =
         image.fileName ||
         `prescription-${Date.now()}.${extensionFromBase64(image.uri)}`;
-
-      console.log('Starting image upload...');
       const uploadResponse = await uploadToServer(
         {
           data: Buffer.from(image.base64 || '', 'base64'),
@@ -331,14 +319,10 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
         },
         {APIPost},
       );
-
-      console.log('Upload successful, saving prescription...');
       const prescriptionResponse = await APIPost({
         url: getURL({key: 'PRESCRIPTION'}),
         body: {imageUrl: uploadResponse},
       });
-
-      console.log('Prescription saved successfully');
       updateCart({
         prescriptionIds: [
           ...(cart.prescriptionIds || []),
@@ -364,7 +348,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
 
   const handleImageProcessingError = (error: any) => {
     const errorDetails = parseError(error);
-    console.log('Image processing failed:', errorDetails);
 
     showToast({
       ...ToastProfiles.error,
@@ -373,26 +356,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
       origin: 'top',
     });
   };
-
-  // const handlePrescriptionSaveError = (error: any) => {
-  //   console.log('ERROR==LOL==========', parseError(error));
-  //   showToast({
-  //     ...ToastProfiles.error,
-  //     title: parseError(error).message,
-  //     id: 'prescription-save-error',
-  //     origin: 'top',
-  //   });
-  // };
-
-  // const handleImageUploadError = (error: any) => {
-  //   console.log('LOL=====', error);
-  //   showToast({
-  //     ...ToastProfiles.error,
-  //     title: parseError(error).message,
-  //     id: 'image-upload-error',
-  //     origin: 'top',
-  //   });
-  // };
 
   const removePrescription = (id: string) => {
     const updatedPrescriptions = addedPrescriptions.filter(
@@ -417,7 +380,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
 
     try {
       const hasPermission = await requestCameraPermission();
-      console.log('Camera permission:', hasPermission);
 
       if (!hasPermission) {
         Alert.alert(
@@ -431,7 +393,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
         return;
       }
 
-      console.log('Launching camera...');
       const result = await launchCamera({
         mediaType: 'photo',
         quality: 0.3,
@@ -440,9 +401,7 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
         cameraType: 'back',
       });
 
-      console.log('Camera result:', result);
       if (result.didCancel) {
-        console.log('User cancelled camera');
         return;
       }
 
@@ -466,14 +425,13 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
           showToast({
             ...ToastProfiles.error,
             title: 'Storage permission denied',
-            id: `storage-permission-denied-${Date.now()}`, // Add timestamp to make unique
+            id: `storage-permission-denied-${Date.now()}`,
             origin: 'top',
           });
           return;
         }
       }
 
-      console.log('Launching image picker...');
       const result = await launchImageLibrary({
         mediaType: 'photo',
         quality: 0.3,
@@ -481,9 +439,7 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
         selectionLimit: 1,
       });
 
-      console.log('Image picker result:', result);
       if (result.didCancel) {
-        console.log('User cancelled image picker');
         return;
       }
 
@@ -493,19 +449,6 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
       handleImageProcessingError(error);
     }
   };
-
-  // const pickImage = () => {
-  //   if (!authStatus.loggedIn) {
-  //     toggleLogOutDialogOpen();
-  //     return;
-  //   }
-
-  //   launchImageLibrary({
-  //     mediaType: 'photo',
-  //     quality: 0.3,
-  //     includeBase64: true,
-  //   }).then(handleImageUpload);
-  // };
 
   const validateOrder = () => {
     if (cart.items.length === 0) {
@@ -613,7 +556,7 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
   };
 
   const renderCartItem = ({item, index}: {item: any; index: number}) => (
-    <View style={styles.cartItemContainer} key={`${item.id}_${index}`}>
+    <View style={styles.cartItemContainer}>
       <HStack space={2} alignItems="center">
         <Image
           source={{uri: item.imageUrl}}
@@ -745,6 +688,7 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
               <InfoScreen message="Your cart is empty" />
             )}
             renderItem={renderCartItem}
+            keyExtractor={(item, index) => `${item.id}_${index}`}
           />
         </VStack>
 
@@ -789,9 +733,11 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
         heading="Order Placed Successfully"
         body={
           <ScrollView maxHeight={80} contentContainerStyle={{gap: 10}}>
-            {cart.items.map((item: any, index: number) =>
-              renderOrderSummaryItem(item, index),
-            )}
+            {cart.items.map((item: any, index: number) => (
+              <View key={`${item.id}_${index}`}>
+                {renderOrderSummaryItem(item, index)}
+              </View>
+            ))}
           </ScrollView>
         }
         hideCancel

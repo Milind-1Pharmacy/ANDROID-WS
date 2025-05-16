@@ -27,7 +27,7 @@ import {
   memo,
   useCallback,
 } from 'react';
-import {Dimensions, StyleSheet} from 'react-native';
+import {Dimensions, RefreshControl, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LoadingScreen from '../commonComponents/LoadingScreen';
 import HorizontalScrollableSection from '../displayBlocks/Containers/HorizontalScrollableSection';
@@ -38,6 +38,7 @@ import {parseError} from '@helpers';
 import {useFocusEffect} from '@react-navigation/native';
 import {useContextSelector} from 'use-context-selector';
 import {getCardByIndex} from '@HouseOfCards';
+import {set} from 'lodash';
 
 const card_type = 'product_image_title_date';
 const CardComponent = getCardByIndex(card_type);
@@ -177,10 +178,14 @@ const ItemDetailsView = memo(
     renderData,
     navigation,
     safeAreaInsets,
+    refreshing,
+    handleRefresh,
   }: {
     renderData: any;
     navigation: any;
     safeAreaInsets: any;
+    refreshing: any;
+    handleRefresh: any;
   }) => {
     const [imageHeight, setImageHeight] = useState<number | null>(null);
     const cart = useContextSelector(FormStateContext, state => state.cart);
@@ -293,7 +298,15 @@ const ItemDetailsView = memo(
         <ScrollView
           style={mobileStyle.scrollView}
           contentContainerStyle={mobileStyle.scrollViewContent}
-          ref={scrollViewRef}>
+          ref={scrollViewRef}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                handleRefresh();
+              }}
+            />
+          }>
           <View style={mobileStyle.contentContainer}>
             <View style={mobileStyle.productCard}>
               <Image
@@ -311,10 +324,14 @@ const ItemDetailsView = memo(
                 <Text style={mobileStyle.priceTag}>
                   MRP : ₹{renderData.price}
                 </Text>
-                <Divider orientation="horizontal" height={0.9} my={2} />
-                <Text style={mobileStyle.description}>
-                  {renderData.description}
-                </Text>
+                {renderData.description && (
+                  <>
+                    <Divider orientation="horizontal" height={0.9} my={2} />
+                    <Text style={mobileStyle.description}>
+                      {renderData.description}
+                    </Text>
+                  </>
+                )}
                 {renderData.manufacture && (
                   <Text style={mobileStyle.manufacture}>
                     Manufactured by: {renderData.manufacture}
@@ -459,6 +476,7 @@ const ItemDetails = (
   props: NativeStackScreenProps<RootStackParamList, 'ItemDetails'>,
 ) => {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // Initialize as false
   const [renderData, setRenderData] = useState<any>({});
   const safeAreaInsets = useSafeAreaInsets();
 
@@ -483,6 +501,7 @@ const ItemDetails = (
           id: props.route.params.itemId,
         });
         setLoading(false);
+        setRefreshing(false);
       },
       reject: (error: any) => {
         showToast({
@@ -490,9 +509,17 @@ const ItemDetails = (
           title: parseError(error).message,
           id: 'dashboard-fetch-error',
         });
+        setLoading(false);
+        setRefreshing(false);
       },
     });
   }, [props.route.params.itemId, storeId, APIGet, showToast]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setLoading(true);
+    fetchRenderData();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -509,6 +536,8 @@ const ItemDetails = (
       renderData={renderData}
       navigation={props.navigation}
       safeAreaInsets={safeAreaInsets}
+      refreshing={refreshing}
+      handleRefresh={handleRefresh} // Make sure to pass this prop
     />
   );
 };

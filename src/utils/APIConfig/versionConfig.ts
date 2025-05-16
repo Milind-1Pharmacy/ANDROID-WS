@@ -17,4 +17,4 @@ export const serverVersions = {
   },
 };
 
-export const currentServerVersion: keyof typeof serverVersions = 'prod';
+export const currentServerVersion: keyof typeof serverVersions = 'test';

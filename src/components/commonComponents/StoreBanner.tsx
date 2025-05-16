@@ -14,6 +14,8 @@ import P1Badge from './P1Badge';
 import {getInitials} from '@helpers';
 import React, {useEffect, useState} from 'react';
 import {border} from 'native-base/lib/typescript/theme/styled-system';
+import {TouchableWithoutFeedback} from 'react-native-gesture-handler';
+import {DrawerActions, useNavigation} from '@react-navigation/native';
 const {width, height} = Dimensions.get('screen');
 const isDesktop = width > height;
 const styles = StyleSheet.create({
@@ -132,14 +134,18 @@ const WavingWelcome = ({customerName}: {customerName: string | undefined}) => {
 
 const StoreBanner = (props: any) => {
   const {storeName, loading, imageUrl, customerName} = props;
-
+  const navigation = useNavigation();
   return (
     <HStack style={{...styles.bannerBase, ...(props.bannerBaseStyle || {})}}>
       <HStack
         alignItems="center"
         flex={2}
         style={{maxWidth: width * 0.8, marginLeft: 4}}>
-        <View style={styles.logoContainer}>
+        <TouchableWithoutFeedback
+          style={styles.logoContainer}
+          onPress={() => {
+            navigation.dispatch(DrawerActions.openDrawer());
+          }}>
           {loading ? (
             <Spinner size="sm" color="#2E6ACF" />
           ) : imageUrl ? (
@@ -160,7 +166,7 @@ const StoreBanner = (props: any) => {
               {getInitials(storeName)}
             </Text>
           )}
-        </View>
+        </TouchableWithoutFeedback>
         <VStack marginX={3}>
           <Text
             color="#FFFFFF"

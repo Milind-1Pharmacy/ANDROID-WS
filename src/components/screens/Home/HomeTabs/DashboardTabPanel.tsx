@@ -34,6 +34,7 @@ import {ToastProfiles} from '@ToastProfiles';
 import {parseError} from '@helpers';
 import {RootStackParamList} from 'App';
 import P1Styles from '@P1StyleSheet';
+import {set} from 'lodash';
 
 interface DashboardTabPanelProps {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -72,9 +73,18 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
   );
 
   const fetchRenderData = useCallback(
-    async (onComplete: () => void = () => {}) => {
-
+    async ({
+      onCompleteCallback,
+      isRefreshing,
+    }: {
+      onCompleteCallback?: () => void;
+      isRefreshing?: boolean;
+    } = {}) => {
       if (!hasStoreAccess) return;
+
+      if (!isRefreshing) {
+        setLoading(true);
+      }
 
       try {
         const url = getURL(
@@ -98,7 +108,7 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
         });
         console.error(error);
       } finally {
-        onComplete();
+        onCompleteCallback?.();
         setLoading(false);
       }
     },
@@ -107,7 +117,15 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchRenderData(() => setRefreshing(false));
+    setLoading(true);
+    fetchRenderData({
+      onCompleteCallback: () => {
+        setRefreshing(false);
+        setLoading(false);
+      },
+      isRefreshing: true,
+      
+    });
   };
 
   const navigateToSearch = () => navigation.push('Search');
@@ -165,7 +183,7 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
           contentContainerStyle={styles.contentContainer}
           refreshControl={
             <RefreshControl
-              colors={['#FFFFFF']}
+              colors={['#2e6acf']}
               refreshing={refreshing}
               onRefresh={handleRefresh}
             />

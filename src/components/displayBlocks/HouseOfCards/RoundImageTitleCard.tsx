@@ -26,8 +26,7 @@ const styles = StyleSheet.create({
     width: screenWidth * 0.28,
     maxWidth: 110,
     height: 110,
-
-    borderRadius: 16,
+    borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#d3d3d384',

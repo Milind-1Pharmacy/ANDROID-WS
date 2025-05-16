@@ -6,20 +6,20 @@ const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 const isDesktop = Platform.OS === 'web' && screenWidth > screenHeight;
 const styles = StyleSheet.create({
   sectionBase: {
-    marginHorizontal: 10,
+    marginHorizontal: 8,
     paddingVertical: 5,
-    marginBottom: isDesktop ? 16 : 8,
+    marginBottom: isDesktop ? 16 : 4,
     backgroundColor: 'red',
   },
   itemStyle: {
     alignItems: 'center',
     justifyContent: 'flex-start',
-    padding: 5,
-    marginRight: 5,
-    marginBottom: 2,
+    paddingVertical: 5,
+    marginHorizontal: 3,
+    // marginBottom: 2,         
   },
   row: {
-    marginBottom: 0, // Space between rows
+    marginBottom: 2, // Space between rows
     marginTop: 0,
   },
 });

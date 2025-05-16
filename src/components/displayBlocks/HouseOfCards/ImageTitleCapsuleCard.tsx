@@ -5,8 +5,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from 'App';
 import {useNavigation} from '@react-navigation/native';
 
-const CARD_WIDTH = 140; // Reduced from previous larger width
-const CARD_HEIGHT = 160; // Adjusted for proportion
+const CARD_WIDTH = 120; // Reduced from previous larger width
 
 const BrandCard = ({
   id,
@@ -69,8 +68,8 @@ const styles = StyleSheet.create({
   cardBase: {
     width: CARD_WIDTH,
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    margin: 8,
+    borderRadius: 12,
+    marginHorizontal: 2,
     overflow: 'hidden',
     elevation: 0.2,
     borderColor: '#d3d3d3',

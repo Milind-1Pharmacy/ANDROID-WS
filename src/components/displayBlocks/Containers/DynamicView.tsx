@@ -28,6 +28,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FEFEFE',
+    height: '100%',
+    paddingVertical: 20,
   },
   sectionBaseContainer: {
     paddingHorizontal: 8,

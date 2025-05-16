@@ -195,6 +195,7 @@ const CloudSearch = (props: any) => {
           <Input
             ref={inputRef}
             placeholder={props.placeholder || 'Search'}
+            autoFocus
             value={searchKeyword}
             onChangeText={onSearchKeywordChange}
             style={{

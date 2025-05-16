@@ -24,9 +24,8 @@ import bannerImg from '../../../assets/prescription.png';
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 8,
-    marginHorizontal: 2,
-    width: '101.5%',
+    borderRadius: 4,
+    width: '102.2%',
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#d3d3d384',
@@ -190,7 +189,7 @@ const MBannerButtonCard = () => {
               source={bannerImg}
               style={{height: 48, width: 48}}
               resizeMode="contain"
-              alt='banner'
+              alt="banner"
             />
           </View>
           <View style={styles.textContainer}>
