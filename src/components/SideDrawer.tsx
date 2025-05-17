@@ -26,6 +26,7 @@ import {
   faHeadset,
   faRightToBracket,
   faRightFromBracket,
+  faUserPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import P1AlertDialog from './commonComponents/P1AlertDialog';
 import {ToastProfiles} from '@ToastProfiles';
@@ -187,6 +188,12 @@ const P1Drawer = memo((props: any) => {
         action: 'NAVIGATE',
         screen: 'PrescriptionOrder',
         icon: faPrescriptionBottle,
+      },
+      {
+        label: 'Register Here',
+        action: 'NAVIGATE',
+        screen: 'RegistrationForm',
+        icon: faUserPlus,
       },
       {
         label: 'My Orders',

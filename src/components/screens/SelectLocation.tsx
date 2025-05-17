@@ -184,6 +184,8 @@ const SelectLocation = ({
     }
   }, [location.lat, location.lng, recenter]);
 
+  console.log('location', location);
+
   return (
     <>
       <StatusBar barStyle="light-content" />
@@ -194,15 +196,11 @@ const SelectLocation = ({
           onMapLoaded={() => recenter()}
           mapPadding={{top: 0, right: 0, bottom: height * 0.19, left: 0}}
           style={styles.mapBlock}
-          initialCamera={{
-            center: {
-              latitude: location.lat || 18.457874,
-              longitude: location.lng || 71.005823,
-            },
-            zoom: 20,
-            altitude: 400,
-            heading: 0,
-            pitch: 0,
+          initialRegion={{
+            latitude: 12.9716, // Falls back to Bangalore
+            longitude: 77.5946, // Falls back to Bangalore
+            latitudeDelta: 0.2, // City-level zoom
+            longitudeDelta: 0.2,
           }}>
           <Text>
             {' '}

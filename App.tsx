@@ -101,8 +101,7 @@ import {
 import {faWhatsapp} from '@fortawesome/free-brands-svg-icons';
 import {generateMedBackground} from '@assets';
 import SideDrawer from './src/components/SideDrawer';
-import {LoadingScreen, TruckLoader} from '@commonComponents';
-import {Dimensions, Linking, Platform, Text} from 'react-native';
+import {LoadingScreen} from '@commonComponents';
 import {APIGet} from '@APIHandler';
 import {getURL} from '@APIRepository';
 import {ToastProfiles} from '@ToastProfiles';
@@ -113,7 +112,6 @@ import {
   parseError,
   saveStoreInfo,
 } from '@helpers';
-import SideCart from './src/components/commonComponents/SideCart';
 
 // import {
 //   Home,
@@ -134,10 +132,9 @@ import SideCart from './src/components/commonComponents/SideCart';
 // } from './src/components/screens/index';
 
 // import DynamicGridScreen from '@screens/DynamicGridScreen';
-import {suspensify} from '@Lazy';
-import {debounce} from 'lodash';
+// import {suspensify} from '@Lazy';
+// import {debounce} from 'lodash';
 import {useContextSelector} from 'use-context-selector';
-
 library.add(
   faPills,
   faFileInvoiceDollar,
@@ -238,6 +235,7 @@ const ItemsListing = React.lazy(() => import('@screens/ItemsListing'));
 const DynamicGridScreen = React.lazy(
   () => import('@screens/DynamicGridScreen'),
 );
+const RegistrationForm = React.lazy(() => import('@screens/RegistrationForm'));
 
 export type RootStackParamList = {
   Home: {initialTab: string} | undefined;
@@ -256,6 +254,7 @@ export type RootStackParamList = {
   SelectLocation: undefined;
   AddressForm: undefined;
   Support: undefined;
+  RegistrationForm: undefined;
 };
 
 const linkingConfig = () => {
@@ -289,6 +288,7 @@ const linkingConfig = () => {
           SelectLocation: `select_location`,
           AddressForm: `address_details`,
           Support: `support`,
+          RegistrationForm: `registration_details`,
         },
       },
     },
@@ -314,6 +314,7 @@ type RouteDefinition = {
     | React.FC<NativeStackScreenProps<RootStackParamList, 'SelectLocation'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'AddressForm'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'Support'>>
+    | React.FC<NativeStackScreenProps<RootStackParamList, 'RegistrationForm'>>
     | undefined;
 };
 const AppNavigator = () => {
@@ -362,6 +363,7 @@ const AppNavigator = () => {
       {name: 'SelectLocation', component: SelectLocation},
       {name: 'AddressForm', component: AddressForm},
       {name: 'Support', component: SupportScreen},
+      {name: 'RegistrationForm', component: RegistrationForm},
     ],
     [isPickupMode],
   );

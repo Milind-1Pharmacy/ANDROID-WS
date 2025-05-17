@@ -13,7 +13,7 @@ import SupportScreen from './SupportScreen';
 import AddressForm from './AddressForm';
 import PrescriptionOrder from './PrescriptionOrder';
 import ItemsListing from './ItemsListing';
-
+import RegistrationForm from './RegistrationForm';
 export {
   Home,
   LoginScreen,
@@ -30,4 +30,5 @@ export {
   AddressForm,
   PrescriptionOrder,
   ItemsListing,
+  RegistrationForm,
 };

@@ -67,8 +67,9 @@ const Header = ({
           <Text
             textTransform="capitalize"
             color={textColor || '#FFFFFF'}
+            ml={disableGoback ? 0 : 2}
             fontSize={20}
-            fontWeight="400">
+            fontWeight="600">
             {screenTitle}
           </Text>
         )}
