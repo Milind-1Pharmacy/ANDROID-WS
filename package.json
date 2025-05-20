@@ -18,6 +18,8 @@
     "@react-native-community/blur": "^4.4.1",
     "@react-native-community/datetimepicker": "github:react-native-community/datetimepicker",
     "@react-native-community/netinfo": "^11.1.0",
+    "@react-native-firebase/app": "^18.5.0",
+    "@react-native-firebase/messaging": "^18.5.0",
     "@react-native-masked-view/masked-view": "^0.2.8",
     "@react-navigation/bottom-tabs": "^6.5.7",
     "@react-navigation/drawer": "^6.7.2",

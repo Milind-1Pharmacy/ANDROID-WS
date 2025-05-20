@@ -113,6 +113,8 @@ import {
   saveStoreInfo,
 } from '@helpers';
 
+import messaging from '@react-native-firebase/messaging';
+
 // import {
 //   Home,
 //   LoginScreen,
@@ -135,6 +137,7 @@ import {
 // import {suspensify} from '@Lazy';
 // import {debounce} from 'lodash';
 import {useContextSelector} from 'use-context-selector';
+import {Alert, Platform} from 'react-native';
 library.add(
   faPills,
   faFileInvoiceDollar,
@@ -653,6 +656,42 @@ type StoreInfo = {
 // };
 
 function App(): JSX.Element {
+  useEffect(() => {
+    // Ask for notification permission
+    const requestPermission = async () => {
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      if (enabled) {
+        console.log('Notification permission granted.');
+        getFcmToken();
+      } else {
+        console.log('Notification permission denied.');
+      }
+    };
+
+    // Get and log the FCM token
+    const getFcmToken = async () => {
+      const token = await messaging().getToken();
+      console.log('FCM Token:', token);
+    };
+
+    // Foreground message handler
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      Alert.alert(
+        'New Notification',
+        remoteMessage.notification?.body ?? 'No message body',
+      );
+      console.log('Foreground notification:', remoteMessage);
+    });
+
+    requestPermission();
+
+    return unsubscribe;
+  }, []);
+
   return (
     <NativeBaseProvider theme={_1PNativeBaseTheme}>
       <ToastProvider>
