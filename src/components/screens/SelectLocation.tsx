@@ -70,6 +70,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#2E6ACF',
     ...P1Styles.shadow,
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 1000,
+  },
 });
 
 const SelectLocation = ({
@@ -83,24 +90,38 @@ const SelectLocation = ({
     }),
   );
   const {showToast} = useContext(ToastContext);
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<MapView>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [markerKey, setMarkerKey] = useState(0); // Add this line
 
   const recenter = useCallback(
     (coords = location) => {
-      console.log('coords', coords);
+      if (!mapRef.current || !isMapReady) return;
 
-      mapRef.current?.animateCamera({
-        duration: 3000,
-        center: {
-          latitude: coords.lat == 0 ? 12.9716 : coords.lat,
-          longitude: coords.lng == 0 ? 77.5946 : coords.lng,
+      const fallbackCoords = {
+        lat: 12.9716, // Bangalore latitude
+        lng: 77.5946, // Bangalore longitude
+      };
+
+      const targetLat =
+        coords.lat && !isNaN(coords.lat) ? coords.lat : fallbackCoords.lat;
+      const targetLng =
+        coords.lng && !isNaN(coords.lng) ? coords.lng : fallbackCoords.lng;
+
+      mapRef.current.animateCamera(
+        {
+          center: {
+            latitude: targetLat,
+            longitude: targetLng,
+          },
+          zoom: 20,
+          altitude: 1000,
         },
-        zoom: 10,
-        altitude: 4000,
-      });
+        {duration: 1000},
+      );
     },
-    [location],
+    [location, isMapReady],
   );
 
   const updateAddress = useCallback(
@@ -109,17 +130,28 @@ const SelectLocation = ({
       getCurrentAddress(
         position,
         (address: any) => {
-          const pos = address?.[0]?.position || {};
-          updateLocation({
-            address: address[0]?.formattedAddress,
-            lat: +pos.lat,
-            lng: +pos.lng,
-          });
-          recenter({lat: +pos.lat, lng: +pos.lng});
+          const pos = address?.[0]?.position || position.coords;
+          const newLocation = {
+            address: address[0]?.formattedAddress || '',
+            lat: +pos.lat || position.coords.latitude,
+            lng: +pos.lng || position.coords.longitude,
+          };
+
+          if (!isNaN(newLocation.lat) && !isNaN(newLocation.lng)) {
+            updateLocation(newLocation);
+            recenter(newLocation);
+            setMarkerKey(prev => prev + 1); // Force marker re-render
+          } else {
+            showToast({
+              ...ToastProfiles.error,
+              title: 'Invalid coordinates received',
+            });
+          }
           setIsLoading(false);
         },
-        () => {
+        (error: any) => {
           showToast({...ToastProfiles.error, title: 'Failed to fetch address'});
+          console.error('Geocoding error:', error);
           setIsLoading(false);
         },
       );
@@ -129,64 +161,61 @@ const SelectLocation = ({
 
   const setCurrentLocation = useCallback(async () => {
     setIsLoading(true);
-    const platformPermission = Platform.select({
-      ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
-      android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
-    });
-
-    if (!platformPermission) {
-      showToast({
-        ...ToastProfiles.error,
-        title: 'Platform not supported for location permissions',
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const response = await Permissions.check(platformPermission);
-      if (response === RESULTS.GRANTED) {
-        getCurrentLocation(updateAddress, () => {
-          showToast({
-            ...ToastProfiles.error,
-            title: 'Failed to fetch location',
-          });
-          setIsLoading(false);
-        });
-      } else {
-        const newResponse = await Permissions.request(platformPermission);
-        if (newResponse === RESULTS.GRANTED) {
-          getCurrentLocation(updateAddress, () => {
-            showToast({
-              ...ToastProfiles.error,
-              title: 'Failed to fetch location',
-            });
-            setIsLoading(false);
-          });
-        } else {
-          showToast({
-            ...ToastProfiles.error,
-            title: 'Location permission denied',
-          });
-          setIsLoading(false);
+      const platformPermission = Platform.select({
+        ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
+        android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+      });
+
+      if (!platformPermission) {
+        throw new Error('Platform not supported for location permissions');
+      }
+
+      const status = await Permissions.check(platformPermission);
+      if (status !== RESULTS.GRANTED) {
+        const newStatus = await Permissions.request(platformPermission);
+        if (newStatus !== RESULTS.GRANTED) {
+          throw new Error('Location permission denied');
         }
       }
-    } catch (error) {
+
+      getCurrentLocation(
+        (position: any) => {
+          updateAddress(position);
+        },
+        (error: any) => {
+          throw new Error('Failed to fetch location: ' + error.message);
+        },
+      );
+    } catch (error: any) {
       showToast({
         ...ToastProfiles.error,
-        title: 'Error requesting location permission',
+        title: error.message || 'Location error occurred',
       });
       setIsLoading(false);
     }
   }, [updateAddress, showToast]);
 
   useEffect(() => {
-    if (location.lat && location.lng) {
+    if (location.lat && location.lng && isMapReady) {
       recenter();
     }
-  }, [location.lat, location.lng, recenter]);
+  }, [location.lat, location.lng, recenter, isMapReady]);
 
-  console.log('location', location);
+  const handleMapReady = useCallback(() => {
+    setIsMapReady(true);
+    recenter();
+  }, [recenter]);
+
+  const handleMarkerDragEnd = useCallback(
+    (event: MarkerDragStartEndEvent) => {
+      updateAddress({coords: event.nativeEvent.coordinate});
+    },
+    [updateAddress],
+  );
+
+  console.log('lat type:', typeof location.lat); // should be 'number'
+  console.log('lng type:', typeof location.lng); // should be 'number'
 
   return (
     <>
@@ -195,31 +224,38 @@ const SelectLocation = ({
         <MapView
           provider="google"
           ref={mapRef}
-          onMapLoaded={() => recenter()}
+          onMapReady={handleMapReady}
           mapPadding={{top: 0, right: 0, bottom: height * 0.19, left: 0}}
           style={styles.mapBlock}
           initialRegion={{
-            latitude: 12.9716, // Falls back to Bangalore
-            longitude: 77.5946, // Falls back to Bangalore
-            latitudeDelta: 0.2, // City-level zoom
+            latitude: 12.9716,
+            longitude: 77.5946,
+            latitudeDelta: 0.2,
             longitudeDelta: 0.2,
-          }}>
-          <Text>
-            {' '}
-            {location.lat && location.lng && (
-              <Marker
-                draggable
-                onDragEnd={(event: MarkerDragStartEndEvent) =>
-                  updateAddress({coords: event.nativeEvent.coordinate})
-                }
-                coordinate={{
-                  latitude: location.lat,
-                  longitude: location.lng,
-                }}
-              />
-            )}
-          </Text>
+          }}
+          loadingEnabled={true}
+          loadingIndicatorColor="#2E6ACF"
+          loadingBackgroundColor="#FFFFFF">
+          {/* Render the Marker component conditionally */}
+          {!!(location.lat && location.lng) ? (
+            <Marker
+              key={`marker-${markerKey}`}
+              draggable
+              onDragEnd={handleMarkerDragEnd}
+              coordinate={{
+                latitude: location.lat,
+                longitude: location.lng,
+              }}
+            />
+          ) : null}
         </MapView>
+
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <Spinner size="lg" color="#2E6ACF" />
+          </View>
+        )}
+
         <VStack style={styles.dataBlock} space={2}>
           <HStack style={{...styles.header, top: -60, paddingHorizontal: 2}}>
             <HStack alignItems="center">
@@ -272,7 +308,9 @@ const SelectLocation = ({
             <Text bold>Set your delivery location</Text>
           </VStack>
           <VStack space={2} p={4} pt={0}>
-            <Text fontSize="sm">{location.address}</Text>
+            <Text fontSize="sm">
+              {location.address || 'No address selected'}
+            </Text>
             <Button
               disabled={!location.address || isLoading}
               style={styles.submitButton}

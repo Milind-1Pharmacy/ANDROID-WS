@@ -362,6 +362,7 @@ const AppNavigator = memo(() => {
         ? [
             {name: 'AddressListing', component: AddressListScreen},
             {name: 'SelectLocation', component: SelectLocation},
+            {name: 'SearchAddress', component: SearchAddress},
           ]
         : []),
       {name: 'RegistrationForm', component: RegistrationForm},
@@ -456,8 +457,12 @@ const AppNavigator = memo(() => {
                 <React.Suspense fallback={<LoadingScreen />}>
                   {route.component &&
                     React.createElement(
-                      route.component as React.ComponentType<any>,
-                      props,
+                      route.component as unknown as React.ComponentType<RouteDefinition>,
+                      {
+                        ...props,
+                        name: route.name as keyof RootStackParamList,
+                        component: route.component,
+                      },
                     )}
                 </React.Suspense>
               )}
