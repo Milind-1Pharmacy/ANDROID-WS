@@ -2327,6 +2327,11 @@
   resolved "https://registry.npmjs.org/@react-native-community/blur/-/blur-4.4.1.tgz"
   integrity sha512-XBSsRiYxE/MOEln2ayunShfJtWztHwUxLFcSL20o+HNNRnuUDv+GXkF6FmM2zE8ZUfrnhQ/zeTqvnuDPGw6O8A==
 
+"@react-native-community/checkbox@^0.5.20":
+  version "0.5.20"
+  resolved "https://registry.npmjs.org/@react-native-community/checkbox/-/checkbox-0.5.20.tgz"
+  integrity sha512-NuTAOFmttPEX7cwDbVr5Rf0HR86zCzX2FllebMayxca//dFH6X5DLySftra/PC2K9kt42yashWK7T2Tucm5JTQ==
+
 "@react-native-community/cli-clean@12.3.2":
   version "12.3.2"
   resolved "https://registry.npmjs.org/@react-native-community/cli-clean/-/cli-clean-12.3.2.tgz"
@@ -8981,6 +8986,13 @@ react-native-date-picker@^5.0.12:
   resolved "https://registry.npmjs.org/react-native-date-picker/-/react-native-date-picker-5.0.12.tgz"
   integrity sha512-R/mUnCKhcuxbhKPFwYdBQCxQt9HHLqpM4ruRUqlcBjiUZ3N2wdnwOMyc888Ps8qp8e7v29PrDHtUlG8LPuFn9w==
 
+react-native-document-picker@^9.3.1:
+  version "9.3.1"
+  resolved "https://registry.npmjs.org/react-native-document-picker/-/react-native-document-picker-9.3.1.tgz"
+  integrity sha512-Vcofv9wfB0j67zawFjfq9WQPMMzXxOZL9kBmvWDpjVuEcVK73ndRmlXHlkeFl5ZHVsv4Zb6oZYhqm9u5omJOPA==
+  dependencies:
+    invariant "^2.2.4"
+
 react-native-elements@^3.4.3:
   version "3.4.3"
   resolved "https://registry.npmjs.org/react-native-elements/-/react-native-elements-3.4.3.tgz"
@@ -9123,7 +9135,7 @@ react-native-vector-icons@^10.0.3, react-native-vector-icons@>7.0.0:
     prop-types "^15.7.2"
     yargs "^16.1.1"
 
-react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", "react-native@>= 0.64.3", "react-native@>= 0.67", react-native@>=0.42.0, react-native@>=0.48.4, react-native@>=0.57, react-native@>=0.59, react-native@>=0.60.0, react-native@>=0.63.3, react-native@>=0.70.0, react-native@>=0.71.0, react-native@>=0.74.0, react-native@0.73.4:
+react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", "react-native@>= 0.62", "react-native@>= 0.64.3", "react-native@>= 0.67", react-native@>=0.42.0, react-native@>=0.48.4, react-native@>=0.57, react-native@>=0.59, react-native@>=0.60.0, react-native@>=0.63.3, react-native@>=0.70.0, react-native@>=0.71.0, react-native@>=0.74.0, react-native@0.73.4:
   version "0.73.4"
   resolved "https://registry.npmjs.org/react-native/-/react-native-0.73.4.tgz"
   integrity sha512-VtS+Yr6OOTIuJGDECIYWzNU8QpJjASQYvMtfa/Hvm/2/h5GdB6W9H9TOmh13x07Lj4AOhNMx3XSsz6TdrO4jIg==

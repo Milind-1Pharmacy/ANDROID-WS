@@ -1,4 +1,10 @@
-import React, {useContext, useState} from 'react';
+import React, {
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   View,
   Text,
@@ -14,88 +20,307 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Animated,
+  Pressable,
+  Alert,
+  Linking,
 } from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import DatePicker from 'react-native-date-picker';
-import {set} from 'lodash';
 import {Header} from '@commonComponents';
-import {AuthContext} from '@contextProviders';
+import {AuthContext, ToastContext} from '@contextProviders';
+import DocumentPicker from 'react-native-document-picker';
+import CheckBox from '@react-native-community/checkbox';
+import {
+  geolocationInit,
+  getCurrentAddress,
+  getCurrentLocation,
+} from '@location';
+import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
+import {parseError} from '@helpers';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {
+  faFilePdf,
+  faFileWord,
+  faFileExcel,
+  faFileZipper,
+  faFileLines,
+  faFile,
+} from '@fortawesome/free-solid-svg-icons';
+
+// Types
+type Gender = 'male' | 'female' | '';
+type FamilyMemberType = 'male' | 'female' | 'children';
+type HealthIssue =
+  | 'bloodPressure'
+  | 'diabetes'
+  | 'kidneyProblems'
+  | 'neurologicalProblems'
+  | 'cancer'
+  | 'other';
 
 interface FormData {
+  firstName: string;
+  lastName: string;
   fullName: string;
   mobileNumber: string;
-  gender: string;
+  gender: Gender;
   dateOfBirth: Date;
+  age: string;
   flatNumber: string;
   blockNumber: string;
   buildingNumber: string;
   address: string;
   email: string;
+  location: {
+    latitude: number | null;
+    longitude: number | null;
+  };
+  familyMembers: Record<FamilyMemberType, string>;
+  prescription: {
+    uri: string;
+    name: string;
+    type: string;
+  }[];
+  healthIssues: Record<HealthIssue, boolean | string>;
 }
 
-interface Errors {
-  fullName?: string;
+interface FormErrors {
+  firstName?: string;
+  lastName?: string;
   mobileNumber?: string;
-  flatNumber?: string;
+  gender?: string;
   address?: string;
   profilePic?: string;
-  email?: string;
+  familyMembers?: string;
 }
-const RegistrationForm = () => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    mobileNumber: '',
-    gender: '',
-    dateOfBirth: new Date(),
-    flatNumber: '',
-    blockNumber: '',
-    buildingNumber: '',
-    address: '',
-    email: '', // Added email property
-  });
 
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof FormData | 'profilePic', string>>
-  >({});
+// Constants
+const GENDER_OPTIONS = [
+  {label: 'Male', value: 'male' as Gender},
+  {label: 'Female', value: 'female' as Gender},
+];
+
+const PHOTO_OPTIONS = [
+  {label: 'Take Photo', value: 'take', icon: '📷'},
+  {label: 'Upload Photo', value: 'upload', icon: '📁'},
+];
+
+const HEALTH_ISSUES = [
+  {id: 'bloodPressure' as HealthIssue, label: 'Blood Pressure'},
+  {id: 'diabetes' as HealthIssue, label: 'Diabetes'},
+  {id: 'kidneyProblems' as HealthIssue, label: 'Kidney problems'},
+  {id: 'neurologicalProblems' as HealthIssue, label: 'Neurological problems'},
+  {id: 'cancer' as HealthIssue, label: 'Cancer'},
+];
+
+const FILE_ICONS: Record<string, any> = {
+  pdf: faFilePdf,
+  msword: faFileWord,
+  wordprocessingml: faFileWord,
+  spreadsheetml: faFileExcel,
+  excel: faFileExcel,
+  zip: faFileZipper,
+  compressed: faFileZipper,
+  text: faFileLines,
+};
+
+const INITIAL_FORM_DATA: FormData = {
+  firstName: '',
+  lastName: '',
+  fullName: '',
+  mobileNumber: '',
+  gender: '',
+  dateOfBirth: new Date('2000-01-01'),
+  age: '',
+  flatNumber: '',
+  blockNumber: '',
+  buildingNumber: '',
+  address: '',
+  email: '',
+  location: {
+    latitude: null,
+    longitude: null,
+  },
+  familyMembers: {
+    male: '0',
+    female: '0',
+    children: '0',
+  },
+  prescription: [],
+  healthIssues: {
+    bloodPressure: false,
+    diabetes: false,
+    kidneyProblems: false,
+    neurologicalProblems: false,
+    cancer: false,
+    other: '',
+  },
+};
+
+const RegistrationForm = () => {
+  // State
+  const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [profilePicModalVisible, setProfilePicModalVisible] = useState(false);
-  const [date, setDate] = useState<Date>(new Date('2000-01-01'));
+  const [locationLoading, setLocationLoading] = useState(false);
 
-  const genderOptions = [
-    {label: 'Male', value: 'male'},
-    {label: 'Female', value: 'female'},
-    {label: 'Other', value: 'other'},
-    {label: 'Prefer not to say', value: 'prefer_not_to_say'},
-  ];
-  const photoOptions = [
-    {label: 'Take Photo', value: 'take', icon: '📷'},
-    {label: 'Upload Photo', value: 'upload', icon: '📁'},
-  ];
-
+  // Context
+  const {showToast} = useContext(ToastContext);
   const {authStatus} = useContext(AuthContext);
 
-  console.log(authStatus.user.phone.slice(2));
+  // Memoized values
+  const formattedDate = useMemo(
+    () => formatDate(formData.dateOfBirth),
+    [formData.dateOfBirth],
+  );
+  const selectedGenderLabel = useMemo(
+    () =>
+      formData.gender
+        ? GENDER_OPTIONS.find(option => option.value === formData.gender)?.label
+        : 'Select your gender',
+    [formData.gender],
+  );
 
-  //   Default Loging mobile number
-  formData.mobileNumber = authStatus.user.phone.slice(2);
+  // Effects
+  useEffect(() => {
+    // Set mobile number from auth status if available
+    if (authStatus?.user?.phone) {
+      updateField('mobileNumber', authStatus.user.phone.slice(2));
+    }
+  }, [authStatus?.user?.phone]);
 
-  const updateField = (field: keyof FormData, value: string | Date) => {
-    setFormData({...formData, [field]: value});
+  useEffect(() => {
+    // Update fullName when first or last name changes
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    if (fullName !== formData.fullName) {
+      setFormData(prev => ({...prev, fullName}));
+    }
+  }, [formData.firstName, formData.lastName, formData.fullName]);
+
+  // Helper functions
+  const updateField = (field: keyof FormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+
     // Clear error when user types
-    if (errors[field]) {
-      setErrors({...errors, [field]: null});
+    if (errors[field as keyof FormErrors]) {
+      setErrors(prev => ({...prev, [field]: undefined}));
     }
   };
 
-  const takePhoto = () => {
-    launchCamera(
+  const updateHealthIssue = (issue: HealthIssue, value: boolean | string) => {
+    setFormData(prev => ({
+      ...prev,
+      healthIssues: {
+        ...prev.healthIssues,
+        [issue]: value,
+      },
+    }));
+  };
+
+  const updateFamilyMember = (type: FamilyMemberType, value: string) => {
+    const numValue = Math.max(0, parseInt(value) || 0).toString();
+    setFormData(prev => ({
+      ...prev,
+      familyMembers: {
+        ...prev.familyMembers,
+        [type]: numValue,
+      },
+    }));
+  };
+
+  const requestCameraPermission = useCallback(async (): Promise<boolean> => {
+    try {
+      if (Platform.OS === 'android') {
+        const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
+        const storagePermission =
+          Platform.Version >= 33
+            ? await check(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES)
+            : await check(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+
+        if (
+          [cameraPermission, storagePermission].some(p => p === RESULTS.DENIED)
+        ) {
+          const requestedCamera = await request(PERMISSIONS.ANDROID.CAMERA);
+          const requestedStorage =
+            Platform.Version >= 33
+              ? await request(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES)
+              : await request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+
+          return (
+            requestedCamera === RESULTS.GRANTED &&
+            requestedStorage === RESULTS.GRANTED
+          );
+        }
+
+        return (
+          cameraPermission === RESULTS.GRANTED &&
+          storagePermission === RESULTS.GRANTED
+        );
+      }
+
+      if (Platform.OS === 'ios') {
+        const cameraPermission = await check(PERMISSIONS.IOS.CAMERA);
+        if (cameraPermission === RESULTS.DENIED) {
+          const result = await request(PERMISSIONS.IOS.CAMERA);
+          return result === RESULTS.GRANTED;
+        }
+        return cameraPermission === RESULTS.GRANTED;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Permission error:', error);
+      return false;
+    }
+  }, []);
+
+  const takePhoto = useCallback(async () => {
+    try {
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Denied',
+          'Camera and storage permissions are required to take photos. Please enable them in settings.',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {text: 'Open Settings', onPress: () => Linking.openSettings()},
+          ],
+        );
+        return;
+      }
+
+      const result = await launchCamera({
+        mediaType: 'photo',
+        quality: 0.3,
+        includeBase64: true,
+        saveToPhotos: true,
+        cameraType: 'back',
+      });
+
+      if (result.assets?.[0]?.uri) {
+        setProfilePic(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      showToast({
+        title: parseError(error).message,
+      });
+    }
+  }, [requestCameraPermission, showToast]);
+
+  const uploadPhoto = useCallback(() => {
+    launchImageLibrary(
       {
         mediaType: 'photo',
-        cameraType: 'front',
         quality: 0.7,
+        selectionLimit: 1,
       },
       response => {
         if (
@@ -107,37 +332,120 @@ const RegistrationForm = () => {
         }
       },
     );
-  };
-  const uploadPhoto = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        quality: 0.7,
-        selectionLimit: 1, // Only allow single selection
-      },
-      handleImageResponse,
-    );
-  };
+  }, []);
 
-  const handleImageResponse = (response: any) => {
-    if (
-      !response.didCancel &&
-      !response.errorCode &&
-      response.assets?.[0]?.uri
-    ) {
-      setProfilePic(response.assets[0].uri);
+  const getCurrentLocationandAddress = useCallback(async () => {
+    await geolocationInit();
+    setLocationLoading(true);
+
+    try {
+      getCurrentLocation(
+        async position => {
+          const {latitude, longitude} = position.coords;
+          updateField('location', {latitude, longitude});
+
+          getCurrentAddress(
+            position,
+            (addressResults: any) => {
+              if (addressResults.length > 0) {
+                updateField('address', addressResults[0].formattedAddress);
+                Alert.alert(
+                  'Success',
+                  'Location and address captured successfully',
+                );
+              }
+              setLocationLoading(false);
+            },
+            (error: any) => {
+              console.error('Geocoding error:', error);
+              setLocationLoading(false);
+              Alert.alert(
+                'Location Found',
+                'Could not determine exact address',
+              );
+            },
+          );
+        },
+        error => {
+          console.error('Location error:', error);
+          setLocationLoading(false);
+          Alert.alert('Error', 'Failed to get location. Please try again.');
+        },
+      );
+    } catch (error) {
+      console.error('Permission error:', error);
+      setLocationLoading(false);
+      Alert.alert('Error', 'Location permission denied');
+    }
+  }, []);
+
+  const uploadPrescription = useCallback(async () => {
+    try {
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.images, DocumentPicker.types.pdf],
+        allowMultiSelection: true,
+      });
+
+      const selectedFiles = result.map(file => ({
+        uri: file.uri,
+        name: file.name ?? '',
+        type: file.type ?? '',
+      }));
+
+      setFormData(prev => ({
+        ...prev,
+        prescription: [...prev.prescription, ...selectedFiles],
+      }));
+    } catch (err) {
+      if (!DocumentPicker.isCancel(err)) {
+        console.error(err);
+        Alert.alert(
+          'Error',
+          'Failed to upload prescription. Please try again.',
+        );
+      }
+    }
+  }, []);
+
+  const handleRemovePrescription = useCallback((indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      prescription: prev.prescription.filter(
+        (_, index) => index !== indexToRemove,
+      ),
+    }));
+  }, []);
+
+  const calculateAge = useCallback((birthDate: Date) => {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
 
-    if (response.errorCode) {
-      console.log('Image Error:', response.errorMessage);
-      // You could show an error toast here if you want
-    }
-  };
-  const validateForm = () => {
-    const newErrors: typeof errors = {};
+    return age.toString();
+  }, []);
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+  const handleDateChange = useCallback(
+    (selectedDate: Date) => {
+      setShowDatePicker(false);
+      updateField('dateOfBirth', selectedDate);
+      updateField('age', calculateAge(selectedDate));
+    },
+    [calculateAge],
+  );
+
+  const validateForm = useCallback(() => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
     }
 
     if (!formData.mobileNumber) {
@@ -150,10 +458,6 @@ const RegistrationForm = () => {
       newErrors.gender = 'Gender is required';
     }
 
-    // if (!formData.flatNumber) {
-    //   newErrors.flatNumber = 'Flat number is required';
-    // }
-
     if (!formData.address) {
       newErrors.address = 'Address is required';
     }
@@ -162,44 +466,54 @@ const RegistrationForm = () => {
       newErrors.profilePic = 'Profile photo is required';
     }
 
+    const totalFamilyMembers = Object.values(formData.familyMembers).reduce(
+      (sum, val) => sum + parseInt(val),
+      0,
+    );
+
+    if (totalFamilyMembers <= 0) {
+      newErrors.familyMembers = 'Please add at least one family member';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData, profilePic]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (validateForm()) {
       setIsSubmitting(true);
-      // Format data for submission
+
       const submissionData = {
         ...formData,
         profilePic,
-        dateOfBirth: formData.dateOfBirth.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        dateOfBirth: formData.dateOfBirth.toISOString().split('T')[0],
       };
 
-      console.log(submissionData);
+      console.log('Submitting:', submissionData);
+
       // Simulate API call
       setTimeout(() => {
         setIsSubmitting(false);
-        // Handle success response here
+        Alert.alert('Success', 'Registration form submitted successfully!');
       }, 1500);
     }
-  };
+  }, [formData, profilePic, validateForm]);
 
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
+  const getFileIcon = useCallback((type: string) => {
+    if (!type) return faFile;
 
-  const renderGenderPicker = () => {
+    const fileType = Object.keys(FILE_ICONS).find(key => type.includes(key));
+    return fileType ? FILE_ICONS[fileType] : faFile;
+  }, []);
+
+  // Render functions
+  const renderGenderPicker = useCallback(() => {
     if (!showGenderPicker) return null;
 
     return (
       <Modal
         visible={showGenderPicker}
-        transparent={true}
+        transparent
         animationType="fade"
         onRequestClose={() => setShowGenderPicker(false)}>
         <TouchableWithoutFeedback onPress={() => setShowGenderPicker(false)}>
@@ -213,7 +527,7 @@ const RegistrationForm = () => {
               </View>
 
               <View style={styles.sheetContent}>
-                {genderOptions.map(option => (
+                {GENDER_OPTIONS.map(option => (
                   <TouchableOpacity
                     key={option.value}
                     style={[
@@ -243,12 +557,90 @@ const RegistrationForm = () => {
         </TouchableWithoutFeedback>
       </Modal>
     );
-  };
+  }, [showGenderPicker, formData.gender]);
+
+  const renderProfilePhotoModal = useCallback(
+    () => (
+      <Modal
+        visible={profilePicModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setProfilePicModalVisible(false)}>
+        <TouchableWithoutFeedback
+          onPress={() => setProfilePicModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <Animated.View style={styles.bottomSheet}>
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>Select Photo Option</Text>
+                <TouchableOpacity
+                  onPress={() => setProfilePicModalVisible(false)}>
+                  <Text style={styles.closeButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.sheetContent}>
+                {PHOTO_OPTIONS.map(option => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={styles.photoOption}
+                    onPress={() => {
+                      if (option.value === 'take') {
+                        takePhoto();
+                      } else {
+                        uploadPhoto();
+                      }
+                      setProfilePicModalVisible(false);
+                    }}>
+                    <Text style={styles.photoOptionIcon}>{option.icon}</Text>
+                    <Text style={styles.photoOptionText}>{option.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    ),
+    [profilePicModalVisible, takePhoto, uploadPhoto],
+  );
+
+  const renderPrescriptionFiles = useCallback(
+    () => (
+      <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
+        {formData.prescription.map((file, index) => (
+          <View key={index} style={styles.prescriptionFileContainer}>
+            <TouchableOpacity
+              onPress={() => handleRemovePrescription(index)}
+              style={styles.removeFileButton}>
+              <Text style={styles.removeFileButtonText}>✕</Text>
+            </TouchableOpacity>
+
+            {file.type?.startsWith('image/') ? (
+              <Image
+                source={{uri: file.uri}}
+                style={styles.prescriptionImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.prescriptionFileIcon}>
+                <FontAwesomeIcon
+                  icon={getFileIcon(file.type)}
+                  size={24}
+                  color="#555"
+                />
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
+    ),
+    [formData.prescription, getFileIcon, handleRemovePrescription],
+  );
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{flex: 1}}>
+      style={styles.flex1}>
       <Header
         screenTitle="Registration Form"
         headerBaseStyle={styles.header}
@@ -272,80 +664,68 @@ const RegistrationForm = () => {
               <TouchableOpacity
                 style={styles.photoButton}
                 onPress={() => setProfilePicModalVisible(true)}>
-                <Text style={{color: 'white', fontWeight: 'bold'}}>
+                <Text style={styles.photoButtonText}>
                   {profilePic ? 'Change Profile Photo' : 'Add Profile Photo *'}
                 </Text>
               </TouchableOpacity>
-              <Modal
-                visible={profilePicModalVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setProfilePicModalVisible(false)}>
-                <TouchableWithoutFeedback
-                  onPress={() => setProfilePicModalVisible(false)}>
-                  <View style={styles.modalOverlay}>
-                    <Animated.View style={styles.bottomSheet}>
-                      <View style={styles.sheetHeader}>
-                        <Text style={styles.sheetTitle}>
-                          Select Photo Option
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => setProfilePicModalVisible(false)}>
-                          <Text style={styles.closeButton}>✕</Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      <View style={styles.sheetContent}>
-                        {photoOptions.map(option => (
-                          <TouchableOpacity
-                            key={option.value}
-                            style={styles.photoOption}
-                            onPress={() => {
-                              if (option.value === 'take') {
-                                takePhoto();
-                              } else {
-                                uploadPhoto();
-                              }
-                              setProfilePicModalVisible(false);
-                            }}>
-                            <Text style={styles.photoOptionIcon}>
-                              {option.icon}
-                            </Text>
-                            <Text style={styles.photoOptionText}>
-                              {option.label}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </Animated.View>
-                  </View>
-                </TouchableWithoutFeedback>
-              </Modal>
-            </View>
-            {errors.profilePic && (
-              <Text style={styles.errorText}>{errors.profilePic}</Text>
-            )}
-
-            {/* Full Name */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>
-                Full Name <Text style={styles.requiredIndicator}>*</Text>
-              </Text>
-              <TextInput
-                style={[
-                  styles.textInput,
-                  errors.fullName ? styles.inputError : null,
-                ]}
-                placeholder="Enter your full name"
-                value={formData.fullName}
-                onChangeText={text => updateField('fullName', text)}
-                autoCapitalize="words"
-                returnKeyType="next"
-                placeholderTextColor="#aaa"
-              />
-              {errors.fullName && (
-                <Text style={styles.errorText}>{errors.fullName}</Text>
+              {renderProfilePhotoModal()}
+              {errors.profilePic && (
+                <Text style={styles.errorText}>{errors.profilePic}</Text>
               )}
+            </View>
+
+            {/* First Name & Last Name */}
+            <View style={styles.rowContainer}>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.halfWidth,
+                  styles.rightMargin,
+                ]}>
+                <Text style={styles.label}>
+                  First Name <Text style={styles.requiredIndicator}>*</Text>
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    ...(errors.firstName ? [styles.inputError] : []),
+                  ]}
+                  placeholder="First name"
+                  value={formData.firstName}
+                  onChangeText={text => updateField('firstName', text)}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                  placeholderTextColor="#aaa"
+                />
+                {errors.firstName && (
+                  <Text style={styles.errorText}>{errors.firstName}</Text>
+                )}
+              </View>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.halfWidth,
+                  styles.leftMargin,
+                ]}>
+                <Text style={styles.label}>
+                  Last Name <Text style={styles.requiredIndicator}>*</Text>
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    ...(errors.lastName ? [styles.inputError] : []),
+                  ]}
+                  placeholder="Last name"
+                  value={formData.lastName}
+                  onChangeText={text => updateField('lastName', text)}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                  placeholderTextColor="#aaa"
+                />
+                {errors.lastName && (
+                  <Text style={styles.errorText}>{errors.lastName}</Text>
+                )}
+              </View>
             </View>
 
             {/* Mobile Number */}
@@ -373,7 +753,7 @@ const RegistrationForm = () => {
             {/* Gender */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>
-                Gender <Text style={styles.requiredIndicator}>*</Text>
+                Sex <Text style={styles.requiredIndicator}>*</Text>
               </Text>
               <TouchableOpacity
                 style={[
@@ -381,18 +761,14 @@ const RegistrationForm = () => {
                   styles.dropdownField,
                   errors.gender ? styles.inputError : undefined,
                 ]}
-                onPress={() => setShowGenderPicker(!showGenderPicker)}>
+                onPress={() => setShowGenderPicker(true)}>
                 <Text
                   style={
                     formData.gender
                       ? styles.selectedText
                       : styles.placeholderText
                   }>
-                  {formData.gender
-                    ? genderOptions.find(
-                        option => option.value === formData.gender,
-                      )?.label
-                    : 'Select your gender'}
+                  {selectedGenderLabel}
                 </Text>
                 <Text style={styles.dropdownIcon}>▼</Text>
               </TouchableOpacity>
@@ -402,42 +778,59 @@ const RegistrationForm = () => {
               )}
             </View>
 
-            {/* Date of Birth */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>
-                Date of Birth <Text style={styles.requiredIndicator}>*</Text>
-              </Text>
-              <TouchableOpacity
-                style={styles.inputBoxDate}
-                onPress={() => setShowDatePicker(true)}>
-                <Text style={styles.inputTextDate}>
-                  {date ? formatDate(date) : 'Select Date of Birth'}
+            {/* Date of Birth and Age */}
+            <View style={styles.rowContainer}>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.twoThirdsWidth,
+                  styles.rightMargin,
+                ]}>
+                <Text style={styles.label}>
+                  Date of Birth <Text style={styles.requiredIndicator}>*</Text>
                 </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.inputBoxDate}
+                  onPress={() => setShowDatePicker(true)}>
+                  <Text style={styles.inputTextDate}>
+                    {formattedDate || 'Select Date of Birth'}
+                  </Text>
+                </TouchableOpacity>
 
-              <DatePicker
-                modal
-                open={showDatePicker}
-                date={date}
-                mode="date"
-                theme="light"
-                maximumDate={new Date()}
-                minimumDate={new Date('1900-01-01')}
-                onConfirm={selectedDate => {
-                  setShowDatePicker(false);
-                  setDate(selectedDate);
-                }}
-                onCancel={() => setShowDatePicker(false)}
-              />
+                <DatePicker
+                  modal
+                  open={showDatePicker}
+                  date={formData.dateOfBirth}
+                  mode="date"
+                  theme="light"
+                  maximumDate={new Date()}
+                  minimumDate={new Date('1900-01-01')}
+                  onConfirm={handleDateChange}
+                  onCancel={() => setShowDatePicker(false)}
+                />
+              </View>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.oneThirdWidth,
+                  styles.leftMargin,
+                ]}>
+                <Text style={styles.label}>Age</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={formData.age}
+                  editable={false}
+                  placeholder="Age"
+                  placeholderTextColor="#aaa"
+                />
+              </View>
             </View>
+
             {/* Email */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Email</Text>
               <TextInput
-                style={[
-                  styles.textInput,
-                  errors.email ? styles.inputError : null,
-                ]}
+                style={styles.textInput}
                 placeholder="Enter your email (Optional)"
                 value={formData.email}
                 onChangeText={text => updateField('email', text)}
@@ -455,44 +848,45 @@ const RegistrationForm = () => {
 
             {/* Flat Number */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>
-                Flat/Apartment Number{' '}
-                {/* <Text style={styles.requiredIndicator}>*</Text> */}
-              </Text>
+              <Text style={styles.label}>Flat/Apartment Number</Text>
               <TextInput
-                style={[
-                  styles.textInput,
-                  ...(errors.flatNumber ? [styles.inputError] : []),
-                ]}
+                style={styles.textInput}
                 placeholder="Enter your flat/apartment number"
                 value={formData.flatNumber}
                 onChangeText={text => updateField('flatNumber', text)}
                 returnKeyType="next"
                 placeholderTextColor="#aaa"
               />
-              {/* {errors.flatNumber && (
-                <Text style={styles.errorText}>{errors.flatNumber}</Text>
-              )} */}
             </View>
 
             {/* Block and Building Numbers */}
             <View style={styles.rowContainer}>
-              <View style={[styles.fieldContainer, {flex: 1, marginRight: 8}]}>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.halfWidth,
+                  styles.rightMargin,
+                ]}>
                 <Text style={styles.label}>Block Number</Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder=" block number"
+                  placeholder="Block number"
                   value={formData.blockNumber}
                   onChangeText={text => updateField('blockNumber', text)}
                   returnKeyType="next"
                   placeholderTextColor="#aaa"
                 />
               </View>
-              <View style={[styles.fieldContainer, {flex: 1, marginLeft: 8}]}>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.halfWidth,
+                  styles.leftMargin,
+                ]}>
                 <Text style={styles.label}>Building Number/Name</Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder=" building number"
+                  placeholder="Building number"
                   value={formData.buildingNumber}
                   onChangeText={text => updateField('buildingNumber', text)}
                   returnKeyType="next"
@@ -503,9 +897,20 @@ const RegistrationForm = () => {
 
             {/* Full Address */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>
-                Full Address <Text style={styles.requiredIndicator}>*</Text>
-              </Text>
+              <View style={styles.addressHeader}>
+                <Text style={styles.label}>
+                  Full Address <Text style={styles.requiredIndicator}>*</Text>
+                </Text>
+                <Pressable
+                  style={styles.locationButton}
+                  onPress={getCurrentLocationandAddress}>
+                  <Text style={styles.locationButtonText}>
+                    {locationLoading
+                      ? 'Getting Location...'
+                      : 'Get Current Location'}
+                  </Text>
+                </Pressable>
+              </View>
               <TextInput
                 style={[
                   styles.textInput,
@@ -526,6 +931,122 @@ const RegistrationForm = () => {
             </View>
           </View>
 
+          {/* Family Members Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Family Members</Text>
+            <Text style={styles.subSectionText}>
+              Total number of family members (including yourself)
+            </Text>
+
+            <View style={styles.rowContainer}>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.oneThirdWidth,
+                  styles.rightMargin,
+                ]}>
+                <Text style={styles.label}>Male</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="0"
+                  value={formData.familyMembers.male}
+                  onChangeText={text => updateFamilyMember('male', text)}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  placeholderTextColor="#aaa"
+                />
+              </View>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.oneThirdWidth,
+                  styles.horizontalMargin,
+                ]}>
+                <Text style={styles.label}>Female</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="0"
+                  value={formData.familyMembers.female}
+                  onChangeText={text => updateFamilyMember('female', text)}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  placeholderTextColor="#aaa"
+                />
+              </View>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.oneThirdWidth,
+                  styles.leftMargin,
+                ]}>
+                <Text style={styles.label}>Children</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="0"
+                  value={formData.familyMembers.children}
+                  onChangeText={text => updateFamilyMember('children', text)}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  placeholderTextColor="#aaa"
+                />
+              </View>
+            </View>
+            {errors.familyMembers && (
+              <Text style={styles.errorText}>{errors.familyMembers}</Text>
+            )}
+          </View>
+
+          {/* Prescription Upload Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Prescription</Text>
+            <Text style={styles.subSectionText}>
+              Upload a prescription if you have one (Optional)
+            </Text>
+
+            <View style={styles.prescriptionContainer}>
+              <TouchableOpacity
+                style={styles.uploadButton}
+                onPress={uploadPrescription}>
+                <Text style={styles.uploadButtonText}>Upload Prescription</Text>
+              </TouchableOpacity>
+
+              {renderPrescriptionFiles()}
+            </View>
+          </View>
+
+          {/* Health Issues Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Health Issues</Text>
+            <Text style={styles.subSectionText}>Select all that apply</Text>
+
+            {HEALTH_ISSUES.map(issue => (
+              <View key={issue.id} style={styles.checkboxContainer}>
+                <CheckBox
+                  value={formData.healthIssues[issue.id] as boolean}
+                  onValueChange={(value: boolean) =>
+                    updateHealthIssue(issue.id, value)
+                  }
+                  tintColors={{true: '#2E6ACF', false: '#999'}}
+                />
+                <Text style={styles.checkboxLabel}>{issue.label}</Text>
+              </View>
+            ))}
+
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Other Health Issues</Text>
+              <TextInput
+                style={[styles.textInput, styles.multilineInput]}
+                placeholder="Specify any other health issues"
+                value={formData.healthIssues.other as string}
+                onChangeText={text => updateHealthIssue('other', text)}
+                multiline
+                numberOfLines={2}
+                textAlignVertical="top"
+                placeholderTextColor="#aaa"
+              />
+            </View>
+          </View>
+
           {/* Submit Button */}
           <TouchableOpacity
             style={styles.submitButton}
@@ -543,7 +1064,23 @@ const RegistrationForm = () => {
     </KeyboardAvoidingView>
   );
 };
+
+// Helper function outside component
+const formatDate = (date: Date) => {
+  if (!date) return '';
+
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Styles
 const styles = StyleSheet.create({
+  flex1: {
+    flex: 1,
+  },
   header: {
     width: '100%',
     padding: 20,
@@ -561,73 +1098,27 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
   section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: 'bold',
     marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: 8,
+    color: '#333',
   },
-  photoContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 12,
-    borderWidth: 3,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  photoPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#e1e1e1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  photoPlaceholderText: {
-    color: '#888',
-    fontSize: 16,
-  },
-  photoButton: {
-    backgroundColor: '#2E6ACF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  photoButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+  subSectionText: {
     fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
   },
   fieldContainer: {
     marginBottom: 16,
@@ -635,39 +1126,50 @@ const styles = StyleSheet.create({
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  halfWidth: {
+    flex: 1,
+  },
+  oneThirdWidth: {
+    flex: 1,
+  },
+  twoThirdsWidth: {
+    flex: 2,
+  },
+  rightMargin: {
+    marginRight: 8,
+  },
+  leftMargin: {
+    marginLeft: 8,
+  },
+  horizontalMargin: {
+    marginHorizontal: 4,
   },
   label: {
     fontSize: 14,
+    marginBottom: 4,
+    color: '#333',
     fontWeight: '500',
-    color: '#555',
-    marginBottom: 6,
   },
   requiredIndicator: {
-    color: '#E53935',
+    color: 'red',
   },
   textInput: {
-    backgroundColor: '#f9f9f9',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#ddd',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#222',
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: 'white',
+    color: '#333',
+  },
+  inputError: {
+    borderColor: 'red',
   },
   multilineInput: {
     height: 100,
-    paddingTop: 12,
-  },
-  inputError: {
-    borderColor: '#E53935',
-    borderWidth: 1,
-  },
-  errorText: {
-    color: '#E53935',
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 2,
+    textAlignVertical: 'top',
   },
   dropdownField: {
     flexDirection: 'row',
@@ -676,79 +1178,90 @@ const styles = StyleSheet.create({
   },
   dropdownIcon: {
     fontSize: 12,
-    color: '#777',
-  },
-  placeholderText: {
-    color: '#999',
+    color: '#666',
   },
   selectedText: {
     color: '#333',
   },
-  submitButton: {
-    backgroundColor: '#2E6ACF',
-    borderRadius: 25,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 10,
-    shadowColor: '#2E6ACF',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+  placeholderText: {
+    color: '#aaa',
   },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  photoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 12,
+  },
+  photoPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#ddd',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  photoPlaceholderText: {
+    color: '#999',
     fontSize: 16,
   },
-  // Bottom Action Sheet styles
+  photoButton: {
+    backgroundColor: '#2E6ACF',
+    padding: 10,
+    borderRadius: 8,
+  },
+  photoButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
   modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   bottomSheet: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -3},
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
     maxHeight: Dimensions.get('window').height * 0.7,
   },
   sheetHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
   },
   sheetTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#333',
   },
   closeButton: {
-    fontSize: 18,
-    color: '#777',
-    padding: 4,
+    fontSize: 20,
+    color: '#999',
   },
   sheetContent: {
-    paddingVertical: 8,
+    paddingTop: 16,
   },
   genderOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
   },
   selectedGender: {
     backgroundColor: '#f0f7ff',
@@ -759,39 +1272,131 @@ const styles = StyleSheet.create({
   },
   selectedGenderText: {
     color: '#2E6ACF',
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   checkmark: {
     color: '#2E6ACF',
     fontSize: 18,
-    fontWeight: 'bold',
-  },
-  inputBoxDate: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  inputTextDate: {
-    color: '#333',
-    fontSize: 16,
   },
   photoOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
   },
   photoOptionIcon: {
     fontSize: 24,
-    marginHorizontal: 15,
+    marginRight: 16,
   },
   photoOptionText: {
     fontSize: 16,
     color: '#333',
+  },
+  inputBoxDate: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+  },
+  inputTextDate: {
+    fontSize: 16,
+    color: '#333',
+  },
+  addressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  locationButton: {
+    backgroundColor: '#2E6ACF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  locationButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#333',
+  },
+  prescriptionContainer: {
+    marginVertical: 8,
+  },
+  uploadButton: {
+    backgroundColor: '#2E6ACF',
+    padding: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  uploadButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  prescriptionFileContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  removeFileButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  removeFileButtonText: {
+    color: 'white',
+    fontSize: 12,
+  },
+  prescriptionImage: {
+    width: '100%',
+    height: '100%',
+  },
+  prescriptionFileIcon: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f3f3f3',
+  },
+  submitButton: {
+    backgroundColor: '#2E6ACF',
+    padding: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
   },
 });
 
