@@ -336,7 +336,6 @@ const AppNavigator = memo(() => {
   const isPickupMode = useIsPickupMode();
   const Stack = createNativeStackNavigator<RootStackParamList>();
 
-  // Static route configuration outside component (if possible)
   const baseRoutes = useMemo(
     () => [
       {name: 'Login', component: LoginScreen},
@@ -363,6 +362,7 @@ const AppNavigator = memo(() => {
             {name: 'AddressListing', component: AddressListScreen},
             {name: 'SelectLocation', component: SelectLocation},
             {name: 'SearchAddress', component: SearchAddress},
+            {name: 'AddressForm', component: AddressForm},
           ]
         : []),
       {name: 'RegistrationForm', component: RegistrationForm},
