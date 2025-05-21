@@ -16,7 +16,7 @@ import {extractStoreAndMode} from './urlUtils';
 import {navigationStorage} from './navigationStorage';
 import {loadStoreInfo, saveStoreInfo} from './storeInfoStorage';
 import {validateNavigationState} from './validateNavigationState';
-
+import {triggerNotification} from './triggerNotification';
 export {
   opacityToHex,
   mimeFromBase64,
@@ -33,4 +33,5 @@ export {
   loadStoreInfo,
   saveStoreInfo,
   validateNavigationState,
+  triggerNotification,
 };

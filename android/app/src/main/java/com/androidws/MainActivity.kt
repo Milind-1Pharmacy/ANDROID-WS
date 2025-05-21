@@ -1,4 +1,4 @@
-package com.androidws
+package com.webstore
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -34,7 +34,7 @@ class MainActivity : ReactActivity() {
         createNotificationChannel()
     }
 
-    override fun getMainComponentName(): String = "androidWS"
+    override fun getMainComponentName(): String = "webstore"
 
     override fun createReactActivityDelegate(): ReactActivityDelegate =
         DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)

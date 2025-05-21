@@ -24,9 +24,10 @@ import {fetchUserDetails, requestOTP, submitOTP} from '@auth';
 import {ToastProfiles} from '@ToastProfiles';
 import {LoadingOverlay} from '@commonComponents';
 import {_1P_LOGO} from '@Constants';
-import {parseError} from '@helpers';
+import {parseError, triggerNotification} from '@helpers';
 import {CommonActions} from '@react-navigation/native';
 import {BackHandler} from 'react-native';
+import notifee, {AndroidStyle} from '@notifee/react-native';
 
 type VerifyOTPProps = NativeStackScreenProps<RootStackParamList, 'VerifyOTP'>;
 
@@ -147,6 +148,16 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({navigation, route}) => {
 
         dismissAllToasts();
         showToast({...ToastProfiles.success, origin: 'top'});
+        await triggerNotification(
+          'Welcome to Webstore!',
+          'Shop with ease and convenience.',
+          {
+            android: {
+              color: '#2e6acf',
+              sound: 'pop', // Add sound file to res/raw folder
+            },
+          },
+        );
 
         navigation.dispatch(
           CommonActions.reset({

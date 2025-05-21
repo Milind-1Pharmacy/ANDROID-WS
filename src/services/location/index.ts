@@ -62,9 +62,25 @@ export const getCurrentAddress = (
     lng: position.coords.longitude,
   })
     .then(response => {
-      // Mimic the old geocoder's response structure
-      const formattedAddress = response.results[0]?.formatted_address || '';
-      onSuccess([{formattedAddress}]); // Match the old array format
+      // console.log('Geocoding response:', response);
+      const firstResult = response.results[0];
+      if (firstResult) {
+        const formattedAddress = firstResult.formatted_address || '';
+        const location = firstResult.geometry?.location || {};
+
+        // Pass both the formatted address and the coordinates
+        onSuccess([
+          {
+            formattedAddress,
+            position: {
+              lat: location.lat,
+              lng: location.lng,
+            },
+          },
+        ]);
+      } else {
+        onError(new Error('No address found'));
+      }
     })
     .catch(onError);
 };

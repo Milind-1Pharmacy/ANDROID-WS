@@ -1,4 +1,4 @@
-package com.androidws
+package com.webstore
 
 import android.app.Application
 import com.facebook.react.PackageList
