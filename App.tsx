@@ -19,6 +19,7 @@ import React, {
   memo,
   useState,
   useMemo,
+  Suspense,
 } from 'react';
 import {
   NativeStackNavigationProp,
@@ -113,6 +114,8 @@ import {
   saveStoreInfo,
 } from '@helpers';
 
+import messaging from '@react-native-firebase/messaging';
+import notifee from '@notifee/react-native';
 // import {
 //   Home,
 //   LoginScreen,
@@ -135,6 +138,7 @@ import {
 // import {suspensify} from '@Lazy';
 // import {debounce} from 'lodash';
 import {useContextSelector} from 'use-context-selector';
+import {Alert, Platform} from 'react-native';
 library.add(
   faPills,
   faFileInvoiceDollar,
@@ -317,28 +321,23 @@ type RouteDefinition = {
     | React.FC<NativeStackScreenProps<RootStackParamList, 'RegistrationForm'>>
     | undefined;
 };
-const AppNavigator = () => {
-  // Context hooks
+const AppNavigator = memo(() => {
+  // Regular context hooks for non-form contexts
   const {showToast} = useContext(ToastContext);
   const {statusCode} = useContext(APIContext);
   const {authStatus, setStoreId, setStoreConfig} = useContext(AuthContext);
-  const {cart = {items: []}} = useContextSelector(FormStateContext, state => ({
-    cart: state.cart || {items: []},
-  }));
 
-  // State hooks
+  // State hooks with initial values
   const [configFetchAttempted, setConfigFetchAttempted] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState('');
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  // Constants
   const isPickupMode = useIsPickupMode();
   const Stack = createNativeStackNavigator<RootStackParamList>();
 
-  // Route configuration
-  const routes = useMemo<RouteDefinition[]>(
+  // Static route configuration outside component (if possible)
+  const baseRoutes = useMemo(
     () => [
       {name: 'Login', component: LoginScreen},
       {name: 'VerifyOTP', component: VerifyOTP},
@@ -351,58 +350,79 @@ const AppNavigator = () => {
       {name: 'PrescriptionOrder', component: PrescriptionOrder},
       {name: 'OrdersListing', component: OrdersListing},
       {name: 'OrderDetails', component: OrderDetailsScreen},
-      ...(!isPickupMode
-        ? [
-            {
-              name: 'AddressListing',
-              component: AddressListScreen,
-            } as RouteDefinition,
-          ]
-        : []),
-      {name: 'SearchAddress', component: SearchAddress},
-      {name: 'SelectLocation', component: SelectLocation},
-      {name: 'AddressForm', component: AddressForm},
-      {name: 'Support', component: SupportScreen},
-      {name: 'RegistrationForm', component: RegistrationForm},
     ],
-    [isPickupMode],
+    [],
   );
 
-  // API call to fetch config
+  // Dynamic routes based on pickup mode
+  const routes = useMemo(
+    () => [
+      ...baseRoutes,
+      ...(!isPickupMode
+        ? [
+            {name: 'AddressListing', component: AddressListScreen},
+            {name: 'SelectLocation', component: SelectLocation},
+          ]
+        : []),
+      {name: 'RegistrationForm', component: RegistrationForm},
+    ],
+    [isPickupMode, baseRoutes],
+  );
+
+  // Config fetch with cleanup
   const fetchConfig = useCallback(
     async (storeId: string) => {
-      if ((authStatus.loggedIn || storeId) && !configFetchAttempted) {
-        setConfigFetchAttempted(true);
+      let mounted = true;
 
+      if (
+        (authStatus.loggedIn || storeId) &&
+        !configFetchAttempted &&
+        mounted
+      ) {
         try {
+          console.log("'Fetching store config...'");
+
           const response = await APIGet({
             url: getURL({key: 'GET_CONFIG', pathParams: storeId}),
           });
-          setStoreConfig(response.data);
+          if (mounted) setStoreConfig(response.data);
         } catch (error) {
-          showToast({
-            ...ToastProfiles.error,
-            title: parseError(error).message || 'Unable to fetch config',
-            id: 'config-fetch-error',
-          });
+          if (mounted) {
+            showToast({
+              ...ToastProfiles.error,
+              title: parseError(error).message || 'Unable to fetch config',
+              id: 'config-fetch-error',
+            });
+          }
         } finally {
-          setLoaded(true);
+          if (mounted) setLoaded(true);
         }
-      } else {
+      } else if (mounted) {
         setLoaded(true);
       }
+
+      return () => {
+        mounted = false;
+      };
     },
-    [authStatus.loggedIn, configFetchAttempted, setStoreConfig, showToast],
+    [configFetchAttempted],
   );
 
-  // Initial setup effect
+  // Initialization effect with cleanup
   useEffect(() => {
     const effectiveStoreId = 'model_medicals_demo';
     setStoreId(effectiveStoreId);
-    fetchConfig(effectiveStoreId);
+    let cleanup: (() => void) | undefined;
+    fetchConfig(effectiveStoreId).then(returnedCleanup => {
+      cleanup = returnedCleanup;
+    });
+
+    return () => {
+      if (typeof cleanup === 'function') cleanup();
+    };
   }, [fetchConfig, setStoreId]);
 
-  // Handle unauthorized access
+  // Auth effect
   useEffect(() => {
     if (statusCode === 401 || statusCode === 1001) {
       navigation.reset({
@@ -416,38 +436,40 @@ const AppNavigator = () => {
     return <LoadingScreen />;
   }
 
+  console.log('app');
+
   return (
     <View style={{flex: 1}}>
       <Stack.Navigator
-        screenOptions={{headerShown: false}}
-        initialRouteName={authStatus.loggedIn ? 'Home' : 'Login'}
-        screenListeners={{
-          state: e => {
-            const state = e?.data?.state;
-            if (state?.routes?.length) {
-              setCurrentScreen(state.routes[state.index].name);
-            }
-          },
-        }}>
-        {routes.map(route => (
-          <Stack.Screen
-            key={route.name}
-            name={route.name as keyof RootStackParamList}>
-            {props => (
-              <React.Suspense fallback={<LoadingScreen />}>
-                {route.component &&
-                  React.createElement(
-                    route.component as React.ComponentType<any>,
-                    props,
-                  )}
-              </React.Suspense>
-            )}
-          </Stack.Screen>
-        ))}
+        screenOptions={{
+          headerShown: false,
+          freezeOnBlur: true, // Prevent unmounted screens from re-rendering
+        }}
+        initialRouteName={authStatus.loggedIn ? 'Home' : 'Login'}>
+        {routes.map(route => {
+          const ScreenComponent = route.component;
+          return (
+            <Stack.Screen
+              key={route.name}
+              name={route.name as keyof RootStackParamList}>
+              {props => (
+                <React.Suspense fallback={<LoadingScreen />}>
+                  {route.component &&
+                    React.createElement(
+                      route.component as React.ComponentType<any>,
+                      props,
+                    )}
+                </React.Suspense>
+              )}
+            </Stack.Screen>
+          );
+        })}
       </Stack.Navigator>
     </View>
   );
-};
+});
+
+AppNavigator.displayName = 'AppNavigator';
 
 const linking = () => ({
   prefixes: [
@@ -653,6 +675,52 @@ type StoreInfo = {
 // };
 
 function App(): JSX.Element {
+  useEffect(() => {
+    // Ask for notification permission
+    const requestPermission = async () => {
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      if (enabled) {
+        console.log('Notification permission granted.');
+        getFcmToken();
+      } else {
+        console.log('Notification permission denied.');
+      }
+    };
+
+    // Get and log the FCM token
+    const getFcmToken = async () => {
+      const token = await messaging().getToken();
+      console.log('FCM Token:', token);
+    };
+
+    // Foreground message handler
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      Alert.alert(
+        'New Notification',
+        remoteMessage.notification?.body ?? 'No message body',
+      );
+      console.log('Foreground notification:', remoteMessage);
+    });
+
+    requestPermission();
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    async function createChannel() {
+      await notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+      });
+    }
+    createChannel();
+  }, []);
+
   return (
     <NativeBaseProvider theme={_1PNativeBaseTheme}>
       <ToastProvider>

@@ -9,7 +9,7 @@ export const serverVersions = {
   },
   test: {
     baseURL: 'https://apiv2.1pharmacy.io/test/',
-    gAPIKey: 'AIzaSyCGZpIJMhCKyOrCmGH1BkAa38BTxfOX5JQ',
+    gAPIKey: 'AIzaSyDRirVI251uoOIaCdhOL7mBaszs5c4rJGA',
   },
   stagging: {
     baseURL: 'https://apiv2.1pharmacy.io/stagging/',

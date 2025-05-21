@@ -88,14 +88,16 @@ const SelectLocation = ({
 
   const recenter = useCallback(
     (coords = location) => {
+      console.log('coords', coords);
+
       mapRef.current?.animateCamera({
         duration: 3000,
         center: {
-          latitude: coords.lat,
-          longitude: coords.lng,
+          latitude: coords.lat == 0 ? 12.9716 : coords.lat,
+          longitude: coords.lng == 0 ? 77.5946 : coords.lng,
         },
-        zoom: 20,
-        altitude: 400,
+        zoom: 10,
+        altitude: 4000,
       });
     },
     [location],
@@ -228,7 +230,8 @@ const SelectLocation = ({
                   <FontAwesomeIcon
                     icon="arrow-left"
                     style={{color: '#2E6ACF'}}
-                    size={12}
+                    size={16}
+                    color="#2E6ACF"
                   />
                 }
                 onPress={navigation.goBack}

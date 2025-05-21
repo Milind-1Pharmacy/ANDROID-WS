@@ -86,6 +86,8 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
         setLoading(true);
       }
 
+      console.log('Fetching dashboard data...');
+
       try {
         const url = getURL(
           authStatus.loggedIn
@@ -112,7 +114,7 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
         setLoading(false);
       }
     },
-    [hasStoreAccess, authStatus.loggedIn, storeId, APIGet, showToast],
+    [storeId],
   );
 
   const handleRefresh = () => {
@@ -124,7 +126,6 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
         setLoading(false);
       },
       isRefreshing: true,
-      
     });
   };
 

@@ -50,6 +50,7 @@ import {
   mimeFromBase64,
   placeOrderAPIKey,
   parseError,
+  triggerNotification,
 } from '@helpers';
 
 // Components
@@ -497,9 +498,18 @@ const Cart: React.FC<CartProps> = ({navigation, bottomTabsMounted}) => {
     });
   };
 
-  const handleOrderSuccess = (response: any) => {
+  const handleOrderSuccess = async (response: any) => {
     if (!response.data) throw response;
-
+    await triggerNotification(
+      'Thank you for your order!',
+      'Your order has been placed successfully.',
+      {
+        android: {
+          color: '#4CAF50',
+          sound: 'pop',
+        },
+      },
+    );
     showToast({
       ...ToastProfiles.success,
       title: response.data.userMessage,
