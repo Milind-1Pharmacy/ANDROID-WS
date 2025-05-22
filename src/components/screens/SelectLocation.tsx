@@ -376,8 +376,10 @@ export const LocationManager = ({
               onPress={handleConfirm}>
               {isLoading ? (
                 <Spinner color="#FFFFFF" size="sm" />
-              ) : (
+              ) : location.address ? (
                 'Confirm Location'
+              ) : (
+                'Select Location'
               )}
             </Button>
           </VStack>

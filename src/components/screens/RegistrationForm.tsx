@@ -397,9 +397,9 @@ const RegistrationForm = () => {
   const handleLocationSelect = (selectedLocation: LocationData) => {
     setFormData(prev => ({
       ...prev,
-      address: selectedLocation.address,
-      latitude: selectedLocation.lat,
-      longitude: selectedLocation.lng,
+      address: selectedLocation.address || '',
+      latitude: selectedLocation.lat ?? null,
+      longitude: selectedLocation.lng ?? null,
     }));
   };
 
@@ -413,7 +413,7 @@ const RegistrationForm = () => {
           lat: formData.location.latitude ?? 0,
           lng: formData.location.longitude ?? 0,
         },
-        redirectTo: 'RegistrationForm', 
+        redirectTo: 'RegistrationForm',
       });
     } catch (error) {
       console.error('Location error:', error);
