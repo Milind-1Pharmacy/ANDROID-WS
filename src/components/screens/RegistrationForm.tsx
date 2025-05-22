@@ -46,6 +46,9 @@ import {
   faFileLines,
   faFile,
 } from '@fortawesome/free-solid-svg-icons';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from 'App';
 
 // Types
 type Gender = 'male' | 'female' | '';
@@ -57,6 +60,10 @@ type HealthIssue =
   | 'neurologicalProblems'
   | 'cancer'
   | 'other';
+type RegistrationFormNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'RegistrationForm'
+>;
 
 interface FormData {
   firstName: string;
@@ -92,6 +99,12 @@ interface FormErrors {
   address?: string;
   profilePic?: string;
   familyMembers?: string;
+}
+
+interface LocationData {
+  address: string;
+  lat: number;
+  lng: number;
 }
 
 // Constants
@@ -167,6 +180,8 @@ const RegistrationForm = () => {
   const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [profilePicModalVisible, setProfilePicModalVisible] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+
+  const navigation = useNavigation<RegistrationFormNavigationProp>();
 
   // Context
   const {showToast} = useContext(ToastContext);
@@ -334,50 +349,78 @@ const RegistrationForm = () => {
     );
   }, []);
 
-  const getCurrentLocationandAddress = useCallback(async () => {
-    await geolocationInit();
+  // const getCurrentLocationandAddress = useCallback(async () => {
+  //   await geolocationInit();
+  //   setLocationLoading(true);
+
+  //   try {
+  //     getCurrentLocation(
+  //       async position => {
+  //         const {latitude, longitude} = position.coords;
+  //         updateField('location', {latitude, longitude});
+
+  //         getCurrentAddress(
+  //           position,
+  //           (addressResults: any) => {
+  //             if (addressResults.length > 0) {
+  //               updateField('address', addressResults[0].formattedAddress);
+  //               Alert.alert(
+  //                 'Success',
+  //                 'Location and address captured successfully',
+  //               );
+  //             }
+  //             setLocationLoading(false);
+  //           },
+  //           (error: any) => {
+  //             console.error('Geocoding error:', error);
+  //             setLocationLoading(false);
+  //             Alert.alert(
+  //               'Location Found',
+  //               'Could not determine exact address',
+  //             );
+  //           },
+  //         );
+  //       },
+  //       error => {
+  //         console.error('Location error:', error);
+  //         setLocationLoading(false);
+  //         Alert.alert('Error', 'Failed to get location. Please try again.');
+  //       },
+  //     );
+  //   } catch (error) {
+  //     console.error('Permission error:', error);
+  //     setLocationLoading(false);
+  //     Alert.alert('Error', 'Location permission denied');
+  //   }
+  // }, []);
+
+  const handleLocationSelect = (selectedLocation: LocationData) => {
+    setFormData(prev => ({
+      ...prev,
+      address: selectedLocation.address,
+      latitude: selectedLocation.lat,
+      longitude: selectedLocation.lng,
+    }));
+  };
+
+  const getCurrentLocationAndRedirect = async () => {
     setLocationLoading(true);
-
     try {
-      getCurrentLocation(
-        async position => {
-          const {latitude, longitude} = position.coords;
-          updateField('location', {latitude, longitude});
-
-          getCurrentAddress(
-            position,
-            (addressResults: any) => {
-              if (addressResults.length > 0) {
-                updateField('address', addressResults[0].formattedAddress);
-                Alert.alert(
-                  'Success',
-                  'Location and address captured successfully',
-                );
-              }
-              setLocationLoading(false);
-            },
-            (error: any) => {
-              console.error('Geocoding error:', error);
-              setLocationLoading(false);
-              Alert.alert(
-                'Location Found',
-                'Could not determine exact address',
-              );
-            },
-          );
+      navigation.navigate('SelectLocation', {
+        onLocationSelect: handleLocationSelect,
+        initialLocation: {
+          address: formData.address,
+          lat: formData.location.latitude ?? 0,
+          lng: formData.location.longitude ?? 0,
         },
-        error => {
-          console.error('Location error:', error);
-          setLocationLoading(false);
-          Alert.alert('Error', 'Failed to get location. Please try again.');
-        },
-      );
+        redirectTo: 'RegistrationForm', 
+      });
     } catch (error) {
-      console.error('Permission error:', error);
+      console.error('Location error:', error);
+    } finally {
       setLocationLoading(false);
-      Alert.alert('Error', 'Location permission denied');
     }
-  }, []);
+  };
 
   const uploadPrescription = useCallback(async () => {
     try {
@@ -903,7 +946,7 @@ const RegistrationForm = () => {
                 </Text>
                 <Pressable
                   style={styles.locationButton}
-                  onPress={getCurrentLocationandAddress}>
+                  onPress={getCurrentLocationAndRedirect}>
                   <Text style={styles.locationButtonText}>
                     {locationLoading
                       ? 'Getting Location...'
@@ -1065,7 +1108,6 @@ const RegistrationForm = () => {
   );
 };
 
-// Helper function outside component
 const formatDate = (date: Date) => {
   if (!date) return '';
 

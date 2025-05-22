@@ -211,6 +211,12 @@ const _1PNativeBaseTheme = extendTheme({
     },
   },
 });
+interface LocationData {
+  address: string;
+  lat: number;
+  lng: number;
+}
+
 const SearchAddress = React.lazy(() => import('@screens/SearchAddress'));
 const AddressListScreen = React.lazy(
   () => import('@screens/AddressListScreen'),
@@ -255,10 +261,16 @@ export type RootStackParamList = {
   OrderDetails: {orderId: string};
   AddressListing: undefined;
   SearchAddress: undefined;
-  SelectLocation: undefined;
+  SelectLocation: {
+    onLocationSelect?: (location: LocationData) => void;
+    initialLocation?: LocationData;
+    redirectTo?: keyof Omit<RootStackParamList, 'SelectLocation'>;
+  };
+  RegistrationForm: {
+    selectedLocation?: LocationData;
+  };
   AddressForm: undefined;
   Support: undefined;
-  RegistrationForm: undefined;
 };
 
 const linkingConfig = () => {
