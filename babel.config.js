@@ -34,6 +34,7 @@ module.exports = {
             './src/components/screens/DynamicGridScreen',
           '@screens/RegistrationForm':
             './src/components/screens/RegistrationForm',
+          '@screens/HealthBook': './src/components/screens/HealthBook',
           '@EntityHandlers': './src/components/EntityHandlers',
           '@commonComponents': './src/components/commonComponents',
           '@auth': './src/services/auth',

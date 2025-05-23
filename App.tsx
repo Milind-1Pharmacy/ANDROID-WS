@@ -246,6 +246,7 @@ const DynamicGridScreen = React.lazy(
   () => import('@screens/DynamicGridScreen'),
 );
 const RegistrationForm = React.lazy(() => import('@screens/RegistrationForm'));
+const HealthBook = React.lazy(() => import('@screens/HealthBook'));
 
 export type RootStackParamList = {
   Home: {initialTab: string} | undefined;
@@ -269,6 +270,7 @@ export type RootStackParamList = {
   RegistrationForm: {
     selectedLocation?: LocationData;
   };
+  HealthBook: undefined;
   AddressForm: undefined;
   Support: undefined;
 };
@@ -305,6 +307,7 @@ const linkingConfig = () => {
           AddressForm: `address_details`,
           Support: `support`,
           RegistrationForm: `registration_details`,
+          HealthBook: `health_book`,
         },
       },
     },
@@ -331,6 +334,7 @@ type RouteDefinition = {
     | React.FC<NativeStackScreenProps<RootStackParamList, 'AddressForm'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'Support'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'RegistrationForm'>>
+    | React.FC<NativeStackScreenProps<RootStackParamList, 'HealthBook'>>
     | undefined;
 };
 const AppNavigator = memo(() => {
@@ -361,6 +365,9 @@ const AppNavigator = memo(() => {
       {name: 'PrescriptionOrder', component: PrescriptionOrder},
       {name: 'OrdersListing', component: OrdersListing},
       {name: 'OrderDetails', component: OrderDetailsScreen},
+      {name: 'RegistrationForm', component: RegistrationForm},
+      {name: 'HealthBook', component: HealthBook},
+      {name: 'Support', component: SupportScreen},
     ],
     [],
   );
@@ -377,7 +384,6 @@ const AppNavigator = memo(() => {
             {name: 'AddressForm', component: AddressForm},
           ]
         : []),
-      {name: 'RegistrationForm', component: RegistrationForm},
     ],
     [isPickupMode, baseRoutes],
   );
