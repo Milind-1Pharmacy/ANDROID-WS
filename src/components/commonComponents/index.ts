@@ -16,7 +16,7 @@ import Header from './Header';
 import CartControlPanel from './CartControlPanel';
 import TruckLoader from './TruckLoader';
 import AnimatedTabNavigator from './AnimatedTabNavigator';
-
+import MedicationItem from './MedicationItem';
 export {
   BottomActionSheet,
   LoadingScreen,
@@ -36,4 +36,5 @@ export {
   CartControlPanel,
   TruckLoader,
   AnimatedTabNavigator,
+  MedicationItem,
 };

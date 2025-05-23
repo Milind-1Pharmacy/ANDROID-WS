@@ -14,6 +14,7 @@ import AddressForm from './AddressForm';
 import PrescriptionOrder from './PrescriptionOrder';
 import ItemsListing from './ItemsListing';
 import RegistrationForm from './RegistrationForm';
+import HealthBook from './HealthBook';
 export {
   Home,
   LoginScreen,
@@ -31,4 +32,5 @@ export {
   PrescriptionOrder,
   ItemsListing,
   RegistrationForm,
+  HealthBook,
 };

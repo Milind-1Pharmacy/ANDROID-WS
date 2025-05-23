@@ -7,6 +7,7 @@ import {FormStateContext} from '@contextProviders';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import {Dimensions} from 'react-native';
 import React from 'react';
+import {View} from 'react-native';
 
 type ItemType = {
   id: string;
@@ -78,31 +79,34 @@ const ItemComponent = memo(
             </VStack>
           </HStack>
         </TouchableOpacity>
-        <Counter
-          value={qty}
-          zeroCounterLabel={
-            <Text
-              fontSize={12}
-              color={'#FFFFFF'}
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              Add to Cart
-            </Text>
-          }
-          add={() => onAdd(item)}
-          subtract={() => onSubtract(item)}
-          containerStyle={{
-            width: 100,
-            justifyContent: 'space-between',
-            backgroundColor: '#2E6ACF',
-          }}
-          buttonPadding={2}
-          textSize={14}
-          labelColor="white"
-          borderRadius={16}
-        />
+        <View style={{marginRight: 10, position: 'absolute', right: 2}}>
+          <Counter
+            value={qty}
+            zeroCounterLabel={
+              <Text
+                fontSize={12}
+                color={'#FFFFFF'}
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                Add to Cart
+              </Text>
+            }
+            add={() => onAdd(item)}
+            subtract={() => onSubtract(item)}
+            containerStyle={{
+              width: 100,
+              justifyContent: 'space-between',
+              backgroundColor: '#2e6acf',
+              marginRight: 10,
+            }}
+            buttonPadding={2}
+            textSize={14}
+            labelColor="white"
+            borderRadius={16}
+          />
+        </View>
       </HStack>
     );
   },
