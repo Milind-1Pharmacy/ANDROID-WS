@@ -62,6 +62,7 @@ import {DocumentPickerResponse} from 'react-native-document-picker';
 import {TABLET_CAPSULE_IMAGE_FALLBACK} from '@Constants';
 import {MedicationItem} from '@commonComponents';
 import {useNavigation} from '@react-navigation/native';
+import {APIGet} from '@APIHandler';
 
 // Types
 interface Medication {
@@ -120,14 +121,6 @@ const STRIP_COLORS = [
 
 const getFileIcon = (fileName: string, uri?: string) => {
   const extension = fileName?.split('.').pop()?.toLowerCase();
-  console.log(
-    'File extension:',
-    extension,
-    'URI:',
-    uri,
-    'File name:',
-    fileName,
-  );
 
   // If it's an image and we have a URI, show thumbnail
   if (uri && ['jpg', 'jpeg', 'png', 'gif'].includes(extension || '')) {
@@ -241,24 +234,32 @@ const HealthBook = () => {
 
       // Debounce the actual API call
       performSearchRef.current = setTimeout(async () => {
-        try {
-          const url = getURL({
-            key: 'SEARCH_PRODUCT',
-            pathParams: storeId || '',
-            queryParams: {search: query},
-          });
+        const url = getURL({
+          key: 'SEARCH_PRODUCT',
+          pathParams: storeId || '',
+          queryParams: {search: query},
+        });
+        APIGet({
+          url: url,
+          resolve: (response: any) => {
+            if (!response.data) {
+              throw response;
+            }
 
-          const response = await axios.get(url);
-          const products = response.data?.data?.products || [];
-
-          setSearchResults(products);
-        } catch (error) {
-          console.error('Search error:', error);
-          setSearchResults([]);
-          Alert.alert('Error', 'Failed to search products. Please try again.');
-        } finally {
-          setIsSearching(false);
-        }
+            const products = response.data?.products || [];
+            setSearchResults(products);
+            setIsSearching(false);
+          },
+          reject: (error: any) => {
+            console.error('Search error:', error);
+            setSearchResults([]);
+            setIsSearching(false);
+            Alert.alert(
+              'Error',
+              'Failed to search products. Please try again.',
+            );
+          },
+        });
       }, 300); // Additional debounce
     },
     [storeId],

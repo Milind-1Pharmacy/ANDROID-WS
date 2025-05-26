@@ -1,7 +1,7 @@
 export const serverVersions = {
   prod: {
     baseURL: 'https://apiv2.1pharmacy.io/prod/',
-    gAPIKey: 'AIzaSyCGZpIJMhCKyOrCmGH1BkAa38BTxfOX5JQ',
+    gAPIKey: 'AIzaSyDRirVI251uoOIaCdhOL7mBaszs5c4rJGA',
   },
   beta: {
     baseURL: 'https://apiv2.1pharmacy.io/beta/',

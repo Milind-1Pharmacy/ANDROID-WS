@@ -24,7 +24,7 @@ import {
 } from 'react-native';
 import P1Styles from '@P1StyleSheet';
 import {useIsFocused} from '@react-navigation/native';
-import {APIContext, FormStateContext, ToastContext} from '@contextProviders';
+import {APIContext, ToastContext} from '@contextProviders';
 import {ToastProfiles} from '@ToastProfiles';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {parseError} from '@helpers';
@@ -117,6 +117,8 @@ const CloudSearch = (props: any) => {
       APIGet({
         url: props.searchURLGenerator(searchItem),
         resolve: (response: any) => {
+          console.log('url:', props.searchURLGenerator(searchItem));
+
           if (!response.data) {
             throw response;
           }

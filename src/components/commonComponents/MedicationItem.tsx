@@ -81,7 +81,7 @@ const MedicationItem: React.FC<MedicationItemProps> = React.memo(
     onPhotoUpload,
     renderColorPicker,
   }) => {
-    console.log('Rendering medication:', item);
+    // console.log('Rendering medication:', item);
 
     // Action sheet states
     const {
