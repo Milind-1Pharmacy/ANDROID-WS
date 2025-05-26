@@ -512,7 +512,9 @@ const HealthBook = () => {
               resizeMode="cover"
             />
             <VStack flex={1}>
-              <Text numberOfLines={1}>{item.name}</Text>
+              <Text style={{color: 'black'}} numberOfLines={1}>
+                {item.name}
+              </Text>
             </VStack>
             <Icon
               as={
@@ -521,7 +523,7 @@ const HealthBook = () => {
                   style={{
                     color: '#2E6ACF',
                     backgroundColor: '#EFEFEF',
-                    padding: 8,
+                    padding: 10,
                     borderRadius: 8,
                   }}
                 />
@@ -639,7 +641,7 @@ const HealthBook = () => {
     <Modal isOpen={showConsentModal} onClose={() => setShowConsentModal(false)}>
       <Modal.Content maxWidth="400px">
         <Modal.CloseButton />
-        <Modal.Header>Blood Sugar Measurement Consent</Modal.Header>
+        <Modal.Header>Measurement Consent</Modal.Header>
         <Modal.Body>
           <VStack space={3}>
             <HStack alignItems="center" space={2}>
@@ -647,19 +649,25 @@ const HealthBook = () => {
                 as={<FontAwesomeIcon icon={faExclamationTriangle} />}
                 color="amber.500"
               />
-              <Text>Important Notice</Text>
+              <Text style={{color: 'gray'}}>Important Notice</Text>
             </HStack>
-            <Text>
+            <Text style={{color: 'gray'}}>
               Blood sugar measurement requires a small blood sample. Please
               ensure:
             </Text>
             <VStack space={1} ml={4}>
-              <Text>• Clean hands and testing area</Text>
-              <Text>• Use a sterile lancet</Text>
-              <Text>• Follow your glucometer instructions</Text>
-              <Text>• Consult healthcare provider for interpretation</Text>
+              <Text style={{color: 'gray'}}>
+                • Clean hands and testing area
+              </Text>
+              <Text style={{color: 'gray'}}>• Use a sterile lancet</Text>
+              <Text style={{color: 'gray'}}>
+                • Follow your glucometer instructions
+              </Text>
+              <Text style={{color: 'gray'}}>
+                • Consult healthcare provider for interpretation
+              </Text>
             </VStack>
-            <Text>
+            <Text sxtyle={{color: 'gray'}}>
               This is for monitoring purposes only. Consult your doctor for
               medical advice.
             </Text>
