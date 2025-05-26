@@ -667,7 +667,7 @@ const HealthBook = () => {
                 • Consult healthcare provider for interpretation
               </Text>
             </VStack>
-            <Text sxtyle={{color: 'gray'}}>
+            <Text style={{color: 'gray'}}>
               This is for monitoring purposes only. Consult your doctor for
               medical advice.
             </Text>
