@@ -13,6 +13,8 @@ import {
   Image,
   FlatList,
   Alert,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import {
   Box,
@@ -33,6 +35,11 @@ import {
 } from 'native-base';
 import {useForm, Controller} from 'react-hook-form';
 import DocumentPicker from 'react-native-document-picker';
+import {
+  CameraOptions,
+  launchCamera,
+  launchImageLibrary,
+} from 'react-native-image-picker';
 import {AuthContext} from '@contextProviders';
 import {getURL} from '@APIRepository';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
@@ -65,6 +72,13 @@ import {useNavigation} from '@react-navigation/native';
 import {APIGet} from '@APIHandler';
 
 // Types
+interface CameraPhoto {
+  uri: string;
+  fileName?: string;
+  type?: string;
+  fileSize?: number;
+}
+
 interface Medication {
   id: string;
   name: string;
@@ -75,16 +89,16 @@ interface Medication {
   isManual: boolean;
   mrp?: string;
   skuId?: string;
-  photo?: any;
-  imageUrl?: string; // Added imageUrl property
+  photo?: CameraPhoto;
+  imageUrl?: string;
 }
 
 interface ProductSearchResult {
   id: string;
   name: string;
   therapy?: string;
-  imageUrl?: string; // Added imageUrl property
-  mrp?: string; // Added mrp property
+  imageUrl?: string;
+  mrp?: string;
 }
 
 interface NewMedication {
@@ -97,12 +111,24 @@ interface NewMedication {
   isManual: boolean;
   skuId?: string;
   mrp?: string;
-  imageUrl?: string; // Added imageUrl property
+  imageUrl?: string;
 }
+
 interface UpdateMedication {
   id: string;
   field: keyof Medication;
   value: any;
+}
+
+interface HealthParameters {
+  height: string;
+  weight: string;
+  bloodPressure: string;
+  bloodSugar: string;
+  spo2: string;
+  bpPhoto: CameraPhoto | null;
+  glucometerPhoto: CameraPhoto | null;
+  pulseOximeterPhoto: CameraPhoto | null;
 }
 // Constants
 
@@ -122,7 +148,6 @@ const STRIP_COLORS = [
 const getFileIcon = (fileName: string, uri?: string) => {
   const extension = fileName?.split('.').pop()?.toLowerCase();
 
-  // If it's an image and we have a URI, show thumbnail
   if (uri && ['jpg', 'jpeg', 'png', 'gif'].includes(extension || '')) {
     return (
       <Image
@@ -133,20 +158,28 @@ const getFileIcon = (fileName: string, uri?: string) => {
     );
   }
 
-  // Otherwise show appropriate icon
   switch (extension) {
     case 'pdf':
       return <FontAwesomeIcon icon={faFilePdf} color="#FF0000" size={20} />;
-    // ... rest of the cases
+    case 'doc':
+    case 'docx':
+      return <FontAwesomeIcon icon={faFileWord} color="#2B579A" size={20} />;
+    case 'xls':
+    case 'xlsx':
+      return <FontAwesomeIcon icon={faFileExcel} color="#217346" size={20} />;
+    case 'txt':
+      return <FontAwesomeIcon icon={faFileAlt} color="#000" size={20} />;
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+      return <FontAwesomeIcon icon={faFileImage} color="#4CAF50" size={20} />;
+    default:
+      return <FontAwesomeIcon icon={faFile} color="#666" size={20} />;
   }
 };
-// Custom Hooks
-interface UseDebounceProps<T> {
-  value: T;
-  delay: number;
-}
 
-const useDebounce = <T,>({value, delay}: UseDebounceProps<T>): T => {
+const useDebounce = <T,>({value, delay}: {value: T; delay: number}): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
@@ -349,70 +382,135 @@ const HealthBook = () => {
     setMedications(prev => prev.filter(med => med.id !== id));
   }, []);
 
-  const handlePhotoUpload = useCallback(
-    async (type: string, medicationId: string | null = null) => {
-      try {
-        const result = await DocumentPicker.pick({
-          type: [DocumentPicker.types.images],
-          copyTo: 'cachesDirectory',
-        });
+  const cameraOptions: CameraOptions = {
+    mediaType: 'photo',
+    quality: 0.8,
+    cameraType: 'back',
+    saveToPhotos: true,
+    includeBase64: false,
+    presentationStyle: 'fullScreen', // Important for Android
+    durationLimit: 30,
+    maxWidth: 1024, // Limits image size
+    maxHeight: 1024,
+  };
 
-        const file = {
-          ...result[0],
-          uri: result[0].uri || result[0].fileCopyUri || undefined,
+  const launchCameraForPhoto = useCallback(
+    async (
+      type: 'bpMonitor' | 'glucometer' | 'pulseOximeter' | 'medicineStrip',
+      medicationId?: string,
+    ) => {
+      try {
+        // First, check if we have camera permission
+        const cameraPermission = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+        );
+
+        if (!cameraPermission) {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            {
+              title: 'Camera Permission',
+              message: 'App needs access to your camera',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            },
+          );
+
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            Alert.alert('Permission Denied', 'Camera permission is required');
+            return;
+          }
+        }
+
+        // Launch camera with proper options
+        const result = await launchCamera(cameraOptions);
+
+        if (result.didCancel) {
+          console.log('User cancelled camera');
+          return;
+        }
+
+        if (result.errorCode) {
+          console.error('Camera Error:', result.errorMessage);
+          Alert.alert('Error', 'Failed to take photo');
+          return;
+        }
+
+        if (!result.assets || result.assets.length === 0) {
+          console.error('No assets in camera result');
+          return;
+        }
+
+        const photo = {
+          uri: result.assets[0].uri || '',
+          fileName: result.assets[0].fileName || `photo_${Date.now()}.jpg`,
+          type: result.assets[0].type || 'image/jpeg',
+          fileSize: result.assets[0].fileSize || 0,
         };
 
+        // Update state based on photo type
         if (type === 'medicineStrip' && medicationId) {
           handleUpdateMedication({
             id: medicationId,
             field: 'photo',
-            value: file,
+            value: photo,
           });
-        } else if (type === 'bpMonitor') {
+        } else {
           setHealthParameters(prev => ({
             ...prev,
-            bpPhoto: {
-              ...file,
-              uri: file.uri || '',
-            },
-          }));
-        } else if (type === 'glucometer') {
-          setHealthParameters(prev => ({
-            ...prev,
-            glucometerPhoto: {
-              ...file,
-              uri: file.uri || '',
-            },
-          }));
-        } else if (type === 'pulseOximeter') {
-          setHealthParameters(prev => ({
-            ...prev,
-            pulseOximeterPhoto: {
-              ...file,
-              uri: file.uri || '',
-            },
-          }));
-        } else if (type === 'healthRecord') {
-          setHealthRecords(prev => ({
-            files: [
-              ...prev.files,
-              {
-                ...file,
-                uri: file.uri || '',
+            ...(type === 'bpMonitor' && {
+              bpPhoto: {
+                name: photo.fileName || '',
+                fileCopyUri: photo.uri || '',
+                size: photo.fileSize || 0,
+                type: photo.type || '',
+                uri: photo.uri || '',
               },
-            ],
+            }),
+            ...(type === 'glucometer' && {
+              glucometerPhoto: {
+                name: photo.fileName || '',
+                fileCopyUri: photo.uri || '',
+                size: photo.fileSize || 0,
+                type: photo.type || '',
+                uri: photo.uri || '',
+              },
+            }),
+            ...(type === 'pulseOximeter' && {
+              pulseOximeterPhoto: {
+                name: photo.fileName || '',
+                fileCopyUri: photo.uri || '',
+                size: photo.fileSize || 0,
+                type: photo.type || '',
+                uri: photo.uri || '',
+              },
+            }),
           }));
         }
 
-        Alert.alert('Success', 'Photo uploaded successfully');
+        Alert.alert('Success', 'Photo captured successfully');
       } catch (err) {
-        if (!DocumentPicker.isCancel(err)) {
-          console.error('Photo upload error:', err);
-          Alert.alert('Error', 'Failed to upload photo');
-        }
+        console.error('Camera error:', err);
+        Alert.alert('Error', 'Failed to access camera');
       }
     },
     [handleUpdateMedication],
+  );
+
+  const handlePhotoUpload = useCallback(
+    (type: string, medicationId: string | null = null) => {
+      if (type === 'medicineStrip' && medicationId) {
+        launchCameraForPhoto('medicineStrip', medicationId);
+      } else if (type === 'bpMonitor') {
+        launchCameraForPhoto('bpMonitor');
+      } else if (type === 'glucometer') {
+        launchCameraForPhoto('glucometer');
+      } else if (type === 'pulseOximeter') {
+        launchCameraForPhoto('pulseOximeter');
+      }
+    },
+    [launchCameraForPhoto],
   );
 
   const handleFileUpload = useCallback(async () => {
@@ -562,11 +660,6 @@ const HealthBook = () => {
       </Box>
     );
   }, [searchResults, addMedicationFromSearch]);
-
-  interface RenderColorPickerProps {
-    selectedColor: string;
-    onColorSelect: (color: string) => void;
-  }
 
   const renderColorPicker = useCallback(
     (selectedColor: string, onColorSelect: (color: string) => void) => (
@@ -816,7 +909,7 @@ const HealthBook = () => {
                   onChangeText={text =>
                     setManualMedication(prev => ({...prev, name: text}))
                   }
-                  placeholder="Enter medicine name"
+                  placeholder="Enter  name"
                 />
               </FormControl>
 
@@ -902,20 +995,35 @@ const HealthBook = () => {
                 variant="outline"
                 size="sm"
                 mt={2}
-                bg="#2e6acf"
-                _text={{color: '#fff'}}
-                _pressed={{bg: '#1f4cab'}}
-                shadow={2}
-                onPress={() => handlePhotoUpload('bpMonitor')}>
-                📷 Upload BP Monitor Photo
+                leftIcon={
+                  <Icon
+                    as={
+                      <FontAwesomeIcon
+                        icon={faCamera}
+                        style={{color: '#fff'}}
+                      />
+                    }
+                  />
+                }
+                onPress={() => launchCameraForPhoto('bpMonitor')}
+                style={{
+                  backgroundColor: '#2e6acf',
+                  borderColor: '#2e6acf',
+                }}
+                _text={{color: 'white'}}
+                _pressed={{
+                  backgroundColor: '#1f4cab',
+                  borderColor: '#1f4cab',
+                }}>
+                Capture BP Monitor Reading
               </Button>
               {healthParameters.bpPhoto && (
                 <HStack alignItems="center" mt={2} space={2}>
-                  {getFileIcon(
-                    healthParameters.bpPhoto.name ?? '',
-                    healthParameters.bpPhoto.uri,
-                  )}
-                  <Text>{healthParameters.bpPhoto.name}</Text>
+                  <Image
+                    source={{uri: healthParameters.bpPhoto.uri}}
+                    style={{width: 32, height: 32, borderRadius: 4}}
+                  />
+                  <Text>namw</Text>
                   <TouchableOpacity
                     onPress={() =>
                       setHealthParameters(prev => ({...prev, bpPhoto: null}))
@@ -941,19 +1049,34 @@ const HealthBook = () => {
                 variant="outline"
                 size="sm"
                 mt={2}
-                bg="#2e6acf"
-                _text={{color: '#fff'}}
-                _pressed={{bg: '#1f4cab'}}
-                shadow={2}
+                leftIcon={
+                  <Icon
+                    as={
+                      <FontAwesomeIcon
+                        icon={faCamera}
+                        style={{color: '#fff'}}
+                      />
+                    }
+                  />
+                }
+                style={{
+                  backgroundColor: '#2e6acf',
+                  borderColor: '#2e6acf',
+                }}
+                _text={{color: 'white'}}
+                _pressed={{
+                  backgroundColor: '#1f4cab',
+                  borderColor: '#1f4cab',
+                }}
                 onPress={() => handlePhotoUpload('glucometer')}>
-                📷 Upload Glucometer Photo
+                Capture Glucometer Reading
               </Button>
               {healthParameters.glucometerPhoto && (
                 <HStack alignItems="center" mt={2} space={2}>
-                  {getFileIcon(
-                    healthParameters.glucometerPhoto.name ?? '',
-                    healthParameters.glucometerPhoto.uri,
-                  )}
+                  <Image
+                    source={{uri: healthParameters.glucometerPhoto.uri}}
+                    style={{width: 32, height: 32, borderRadius: 4}}
+                  />
                   <Text>{healthParameters.glucometerPhoto.name}</Text>
                   <TouchableOpacity
                     onPress={() =>
@@ -982,19 +1105,34 @@ const HealthBook = () => {
                 variant="outline"
                 size="sm"
                 mt={2}
-                bg="#2e6acf"
-                _text={{color: '#fff'}}
-                _pressed={{bg: '#1f4cab'}}
-                shadow={2}
+                leftIcon={
+                  <Icon
+                    as={
+                      <FontAwesomeIcon
+                        icon={faCamera}
+                        style={{color: '#fff'}}
+                      />
+                    }
+                  />
+                }
+                style={{
+                  backgroundColor: '#2e6acf',
+                  borderColor: '#2e6acf',
+                }}
+                _text={{color: 'white'}}
+                _pressed={{
+                  backgroundColor: '#1f4cab',
+                  borderColor: '#1f4cab',
+                }}
                 onPress={() => handlePhotoUpload('pulseOximeter')}>
-                📷 Upload Pulse Oximeter Photo
+                Capture Pulse Oximeter Reading
               </Button>
               {healthParameters.pulseOximeterPhoto && (
                 <HStack alignItems="center" mt={2} space={2}>
-                  {getFileIcon(
-                    healthParameters.pulseOximeterPhoto.name ?? '',
-                    healthParameters.pulseOximeterPhoto.uri,
-                  )}
+                  <Image
+                    source={{uri: healthParameters.pulseOximeterPhoto.uri}}
+                    style={{width: 32, height: 32, borderRadius: 4}}
+                  />
                   <Text>{healthParameters.pulseOximeterPhoto.name}</Text>
                   <TouchableOpacity
                     onPress={() =>

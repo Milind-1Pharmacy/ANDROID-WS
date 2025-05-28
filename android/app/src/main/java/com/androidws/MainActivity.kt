@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.PersistableBundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.facebook.react.ReactActivity
@@ -30,9 +31,23 @@ class MainActivity : ReactActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        // Clear fragment state to prevent crashes
+        // savedInstanceState?.remove("android:support:fragments")
+        // savedInstanceState?.remove("android:fragments")
+        super.onCreate(null)
         createNotificationChannel()
     }
+
+    // // Add this to prevent unwanted activity recreation
+    // override fun onSaveInstanceState(outState: Bundle) {
+    //     // Do not call super to prevent state saving
+    //     // super.onSaveInstanceState(outState)
+    // }
+
+    // override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+    //     // Do not call super to prevent state saving
+    //     // super.onSaveInstanceState(outState, outPersistentState)
+    // }
 
     override fun getMainComponentName(): String = "webstore"
 

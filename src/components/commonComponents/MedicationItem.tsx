@@ -1,5 +1,10 @@
 import React, {useState} from 'react';
-import {TouchableOpacity} from 'react-native';
+import {
+  Alert,
+  PermissionsAndroid,
+  Platform,
+  TouchableOpacity,
+} from 'react-native';
 import {
   Box,
   HStack,
@@ -13,14 +18,17 @@ import {
   Actionsheet,
   useDisclose,
   Pressable,
+  Spinner,
 } from 'native-base';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {
   faTimes,
   faCamera,
   faChevronDown,
+  faTimesCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import {TABLET_CAPSULE_IMAGE_FALLBACK} from '@Constants';
+import {CameraOptions, launchCamera} from 'react-native-image-picker';
 
 // Import your types and constants
 interface Medication {
@@ -113,6 +121,97 @@ const MedicationItem: React.FC<MedicationItemProps> = React.memo(
     const handleTherapySelect = (value: string) => {
       onUpdateMedication({id: item.id, field: 'therapyTag', value});
       onTherapyClose();
+    };
+
+    const [isCameraLoading, setIsCameraLoading] = useState(false);
+
+    // Enhanced camera handler with Xiaomi/Redmi specific fixes
+    const handleCameraLaunch = async () => {
+      setIsCameraLoading(true);
+      try {
+        // 1. Check and request permissions
+        if (Platform.OS === 'android') {
+          const granted = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          ]);
+
+          if (
+            granted['android.permission.CAMERA'] !==
+              PermissionsAndroid.RESULTS.GRANTED ||
+            granted['android.permission.WRITE_EXTERNAL_STORAGE'] !==
+              PermissionsAndroid.RESULTS.GRANTED
+          ) {
+            Alert.alert(
+              'Permissions required',
+              'Camera and storage permissions are needed',
+            );
+            return;
+          }
+        }
+
+        // 2. Special options for Xiaomi/Redmi devices
+        const options: CameraOptions = {
+          mediaType: 'photo',
+          quality: 0.7,
+          cameraType: 'back',
+          saveToPhotos: true,
+          includeBase64: false,
+          presentationStyle: 'fullScreen',
+          durationLimit: 30,
+          maxWidth: 1024, // Limits image size
+          maxHeight: 1024,
+        };
+
+        // 3. Launch camera with error boundary
+        const result = await launchCamera(options);
+
+        // 4. Handle activity recreation on Xiaomi
+        if (Platform.OS === 'android' && !result?.assets) {
+          // Workaround for Xiaomi devices that kill the activity
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (!result?.assets) {
+            throw new Error('Camera activity was destroyed');
+          }
+        }
+
+        if (result.didCancel) {
+          console.log('User cancelled camera');
+          return;
+        }
+
+        if (result.errorCode) {
+          console.error('Camera Error:', result.errorMessage);
+          Alert.alert('Error', 'Failed to take photo');
+          return;
+        }
+
+        if (!result.assets || result.assets.length === 0) {
+          console.error('No assets in camera result');
+          return;
+        }
+
+        const photo = {
+          uri: result.assets[0].uri || '',
+          fileName: result.assets[0].fileName || `photo_${Date.now()}.jpg`,
+          type: result.assets[0].type || 'image/jpeg',
+          fileSize: result.assets[0].fileSize || 0,
+        };
+
+        // Update the medication with the new photo
+        onUpdateMedication({
+          id: item.id,
+          field: 'photo',
+          value: photo,
+        });
+
+        Alert.alert('Success', 'Photo captured successfully');
+      } catch (error) {
+        console.error('Camera error:', error);
+        Alert.alert('Error', 'Failed to capture photo. Please try again.');
+      } finally {
+        setIsCameraLoading(false);
+      }
     };
 
     return (
@@ -219,17 +318,42 @@ const MedicationItem: React.FC<MedicationItemProps> = React.memo(
               </Box>
             </Pressable>
           </FormControl>
-
           {item.isManual && (
             <FormControl>
               <FormControl.Label>Medicine Strip Photo</FormControl.Label>
               <Button
                 variant="outline"
-                leftIcon={<Icon as={<FontAwesomeIcon icon={faCamera} />} />}
-                onPress={() => onPhotoUpload('medicineStrip', item?.id)}>
-                {item.photo ? 'Photo Uploaded' : 'Upload Strip Photo'}
+                leftIcon={
+                  isCameraLoading ? (
+                    <Spinner size="sm" />
+                  ) : (
+                    <Icon as={<FontAwesomeIcon icon={faCamera} />} />
+                  )
+                }
+                onPress={handleCameraLaunch}
+                isDisabled={isCameraLoading}>
+                {item.photo ? 'Photo Uploaded' : 'Capture Strip Photo'}
               </Button>
-              {item.photo && <Text>📷 Photo uploaded successfully</Text>}
+              {item.photo && (
+                <HStack alignItems="center" mt={2} space={2}>
+                  <Image
+                    source={{uri: item.photo.uri}}
+                    style={{width: 32, height: 32, borderRadius: 4}}
+                    resizeMode="cover"
+                  />
+                  <Text>{item.photo.fileName}</Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      onUpdateMedication({
+                        id: item.id,
+                        field: 'photo',
+                        value: null,
+                      })
+                    }>
+                    <FontAwesomeIcon icon={faTimesCircle} color="red" />
+                  </TouchableOpacity>
+                </HStack>
+              )}
             </FormControl>
           )}
         </VStack>

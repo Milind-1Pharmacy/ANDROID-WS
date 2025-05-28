@@ -266,6 +266,7 @@ export type RootStackParamList = {
     onLocationSelect?: (location: LocationData) => void;
     initialLocation?: LocationData;
     redirectTo?: keyof Omit<RootStackParamList, 'SelectLocation'>;
+    showSearchLocation?: boolean;
   };
   RegistrationForm: {
     selectedLocation?: LocationData;

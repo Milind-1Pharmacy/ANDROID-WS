@@ -30,11 +30,6 @@ import {Header} from '@commonComponents';
 import {AuthContext, ToastContext} from '@contextProviders';
 import DocumentPicker from 'react-native-document-picker';
 import CheckBox from '@react-native-community/checkbox';
-import {
-  geolocationInit,
-  getCurrentAddress,
-  getCurrentLocation,
-} from '@location';
 import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 import {parseError} from '@helpers';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
@@ -45,6 +40,7 @@ import {
   faFileZipper,
   faFileLines,
   faFile,
+  faLocationDot,
 } from '@fortawesome/free-solid-svg-icons';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -414,6 +410,7 @@ const RegistrationForm = () => {
           lng: formData.location.longitude ?? 0,
         },
         redirectTo: 'RegistrationForm',
+        showSearchLocation: false,
       });
     } catch (error) {
       console.error('Location error:', error);
@@ -829,9 +826,7 @@ const RegistrationForm = () => {
                   styles.twoThirdsWidth,
                   styles.rightMargin,
                 ]}>
-                <Text style={styles.label}>
-                  Date of Birth <Text style={styles.requiredIndicator}>*</Text>
-                </Text>
+                <Text style={styles.label}>Date of Birth</Text>
                 <TouchableOpacity
                   style={styles.inputBoxDate}
                   onPress={() => setShowDatePicker(true)}>
@@ -862,8 +857,8 @@ const RegistrationForm = () => {
                 <TextInput
                   style={styles.textInput}
                   value={formData.age}
-                  editable={false}
                   placeholder="Age"
+                  keyboardType="phone-pad"
                   placeholderTextColor="#aaa"
                 />
               </View>
@@ -887,7 +882,24 @@ const RegistrationForm = () => {
 
           {/* Address Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Address Details</Text>
+            <View style={styles.rowContainer}>
+              <Text style={styles.sectionTitle}>Address Details</Text>
+
+              <Pressable
+                style={styles.locationButton}
+                onPress={getCurrentLocationAndRedirect}>
+                <Text style={styles.locationButtonText}>
+                  {locationLoading
+                    ? 'Getting Location...'
+                    : 'Get Current Location'}
+                </Text>
+                <FontAwesomeIcon
+                  icon={faLocationDot}
+                  size={16}
+                  style={{color: 'white', marginLeft: 5}}
+                />
+              </Pressable>
+            </View>
 
             {/* Flat Number */}
             <View style={styles.fieldContainer}>
@@ -944,15 +956,6 @@ const RegistrationForm = () => {
                 <Text style={styles.label}>
                   Full Address <Text style={styles.requiredIndicator}>*</Text>
                 </Text>
-                <Pressable
-                  style={styles.locationButton}
-                  onPress={getCurrentLocationAndRedirect}>
-                  <Text style={styles.locationButtonText}>
-                    {locationLoading
-                      ? 'Getting Location...'
-                      : 'Get Current Location'}
-                  </Text>
-                </Pressable>
               </View>
               <TextInput
                 style={[
@@ -1355,9 +1358,13 @@ const styles = StyleSheet.create({
   },
   locationButton: {
     backgroundColor: '#2E6ACF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
     borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    maxHeight: 30,
   },
   locationButtonText: {
     color: 'white',

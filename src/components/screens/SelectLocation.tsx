@@ -72,6 +72,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#2E6ACF',
     ...P1Styles.shadow,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -95,6 +99,7 @@ type LocationManagerProps = {
   showMap?: boolean;
   navigation?: NativeStackNavigationProp<RootStackParamList, 'SelectLocation'>;
   redirectTo?: string;
+  showSearchLocation?: boolean;
 };
 
 type SelectLocationProps = NativeStackScreenProps<
@@ -117,6 +122,7 @@ export const LocationManager = ({
   showMap = true,
   navigation,
   redirectTo,
+  showSearchLocation,
 }: LocationManagerProps) => {
   const [location, setLocation] = useState<LocationData>(initialLocation);
   const [isLoading, setIsLoading] = useState(false);
@@ -332,19 +338,33 @@ export const LocationManager = ({
           )}
           <VStack p={4} pt={onBack ? 3 : 4} pb={0}>
             <HStack justifyContent="space-between" mb={2}>
+              {showSearchLocation && (
+                <Button
+                  // px={3}
+                  style={styles.changeLocationButton}
+                  onPress={() => {
+                    navigation?.navigate('SearchAddress');
+                  }}>
+                  <HStack alignItems="center" space={1}>
+                    <FontAwesomeIcon
+                      icon="search"
+                      size={12}
+                      style={{color: '#FFFFFF', marginRight: 2, marginTop: 2}}
+                    />
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 12,
+                        alignItems: 'center',
+                      }}>
+                      {!location.address ? 'Search Location' : 'Change'}
+                    </Text>
+                  </HStack>
+                </Button>
+              )}
               <Button
                 px={2}
-                py={1}
-                style={styles.changeLocationButton}
-                onPress={() => {
-                  /* navigation to search would go here */
-                  navigation?.navigate('SearchAddress');
-                }}>
-                {!location.address ? 'Search Location' : 'Change'}
-              </Button>
-              <Button
-                px={2}
-                py={1}
+                py={2}
                 style={styles.changeLocationButton}
                 onPress={getCurrentLocationandAddress}
                 disabled={isLoading}>
@@ -358,7 +378,7 @@ export const LocationManager = ({
                       size={15}
                     />
                   )}
-                  <Text fontSize={14} lineHeight={14} color="#FFFFFF">
+                  <Text fontSize={12} lineHeight={14} color="#FFFFFF">
                     Use Current Location
                   </Text>
                 </HStack>
@@ -402,6 +422,7 @@ const SelectLocation = ({navigation, route}: SelectLocationProps) => {
   const initialLocation = route.params?.initialLocation || location;
   const externalOnLocationSelect = route.params?.onLocationSelect;
   const redirectTo = route.params?.redirectTo;
+  const showSearchLocation = route.params?.showSearchLocation ?? true;
 
   const handleLocationSelect = (selectedLocation: LocationData) => {
     if (externalOnLocationSelect) {
@@ -418,6 +439,7 @@ const SelectLocation = ({navigation, route}: SelectLocationProps) => {
       onBack={navigation.goBack}
       navigation={navigation}
       redirectTo={redirectTo}
+      showSearchLocation={showSearchLocation}
     />
   );
 };
