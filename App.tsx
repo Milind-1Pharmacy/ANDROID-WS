@@ -247,7 +247,7 @@ const DynamicGridScreen = React.lazy(
 );
 const RegistrationForm = React.lazy(() => import('@screens/RegistrationForm'));
 const HealthBook = React.lazy(() => import('@screens/HealthBook'));
-
+const UserProfile = React.lazy(() => import('@screens/UserProfile'));
 export type RootStackParamList = {
   Home: {initialTab: string} | undefined;
   Login: undefined;
@@ -272,6 +272,9 @@ export type RootStackParamList = {
     selectedLocation?: LocationData;
   };
   HealthBook: undefined;
+  UserProfile: {
+    userId: string;
+  };
   AddressForm: undefined;
   Support: undefined;
 };
@@ -309,6 +312,7 @@ const linkingConfig = () => {
           Support: `support`,
           RegistrationForm: `registration_details`,
           HealthBook: `health_book`,
+          UserProfile: `user_profile`,
         },
       },
     },
@@ -336,6 +340,7 @@ type RouteDefinition = {
     | React.FC<NativeStackScreenProps<RootStackParamList, 'Support'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'RegistrationForm'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'HealthBook'>>
+    | React.FC<NativeStackScreenProps<RootStackParamList, 'UserProfile'>>
     | undefined;
 };
 const AppNavigator = memo(() => {
@@ -345,7 +350,6 @@ const AppNavigator = memo(() => {
   const {authStatus, setStoreId, setStoreConfig} = useContext(AuthContext);
 
   // State hooks with initial values
-  const [configFetchAttempted, setConfigFetchAttempted] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   const navigation =
@@ -369,6 +373,7 @@ const AppNavigator = memo(() => {
       {name: 'RegistrationForm', component: RegistrationForm},
       {name: 'HealthBook', component: HealthBook},
       {name: 'Support', component: SupportScreen},
+      {name: 'UserProfile', component: UserProfile},
     ],
     [],
   );
@@ -390,43 +395,36 @@ const AppNavigator = memo(() => {
   );
 
   // Config fetch with cleanup
-  const fetchConfig = useCallback(
-    async (storeId: string) => {
-      let mounted = true;
+  const fetchConfig = useCallback(async (storeId: string) => {
+    let mounted = true;
 
-      if (
-        (authStatus.loggedIn || storeId) &&
-        !configFetchAttempted &&
-        mounted
-      ) {
-        try {
-          console.log("'Fetching store config...'");
+    if ((authStatus.loggedIn || storeId) && mounted) {
+      try {
+        console.log("'Fetching store config...'");
 
-          const response = await APIGet({
-            url: getURL({key: 'GET_CONFIG', pathParams: storeId}),
+        const response = await APIGet({
+          url: getURL({key: 'GET_CONFIG', pathParams: storeId}),
+        });
+        if (mounted) setStoreConfig(response.data);
+      } catch (error) {
+        if (mounted) {
+          showToast({
+            ...ToastProfiles.error,
+            title: parseError(error).message || 'Unable to fetch config',
+            id: 'config-fetch-error',
           });
-          if (mounted) setStoreConfig(response.data);
-        } catch (error) {
-          if (mounted) {
-            showToast({
-              ...ToastProfiles.error,
-              title: parseError(error).message || 'Unable to fetch config',
-              id: 'config-fetch-error',
-            });
-          }
-        } finally {
-          if (mounted) setLoaded(true);
         }
-      } else if (mounted) {
-        setLoaded(true);
+      } finally {
+        if (mounted) setLoaded(true);
       }
+    } else if (mounted) {
+      setLoaded(true);
+    }
 
-      return () => {
-        mounted = false;
-      };
-    },
-    [configFetchAttempted],
-  );
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Initialization effect with cleanup
   useEffect(() => {
@@ -699,6 +697,8 @@ type StoreInfo = {
 // };
 
 function App(): JSX.Element {
+  const MemoizedSideDrawer = memo(SideDrawer);
+
   useEffect(() => {
     // Ask for notification permission
     const requestPermission = async () => {
@@ -755,7 +755,7 @@ function App(): JSX.Element {
                 {/* <React.Suspense fallback={<LoadingScreen />}> */}
                 <NavigationContainer theme={_1PTheme} linking={linking()}>
                   <View style={{flex: 1}}>
-                    <SideDrawer component={() => <AppNavigator />} />
+                    <MemoizedSideDrawer component={() => <AppNavigator />} />
                   </View>
                 </NavigationContainer>
                 {/* </React.Suspense> */}

@@ -114,7 +114,7 @@ const DashboardTabPanel: React.FC<DashboardTabPanelProps> = ({navigation}) => {
         setLoading(false);
       }
     },
-    [storeId],
+    [],
   );
 
   const handleRefresh = () => {

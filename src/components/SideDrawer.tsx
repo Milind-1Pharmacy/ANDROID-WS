@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   },
   profileInitials: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '600',
     lineHeight: 28,
   },
@@ -249,7 +249,14 @@ const P1Drawer = memo((props: any) => {
       <VStack flex={1}>
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <View style={styles.profileAvatar}>
+          <Pressable
+            style={styles.profileAvatar}
+            onPress={() => {
+              console.log('Profile Avatar Pressed');
+              props.navigation.navigate('UserProfile', {
+                userId: user?.id ?? 'guest',
+              });
+            }}>
             <Text style={styles.profileInitials}>
               {user?.name
                 ? user.name
@@ -259,7 +266,7 @@ const P1Drawer = memo((props: any) => {
                     .toUpperCase()
                 : 'G'}
             </Text>
-          </View>
+          </Pressable>
           <Text style={styles.navListItemLabel}>{user?.name || 'GUEST'}</Text>
           {authStatus.loggedIn && (
             <Text style={{fontSize: 14, color: '#666666'}}>
