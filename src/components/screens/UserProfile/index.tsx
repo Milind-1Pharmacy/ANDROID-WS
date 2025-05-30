@@ -8,6 +8,8 @@ import {
   SafeAreaView,
   StatusBar,
   RefreshControl,
+  Pressable,
+  TouchableOpacity,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -25,6 +27,8 @@ import {
   userPersonalInfoInterface,
   UserProfileInterface,
 } from './types';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {faArrowLeftLong, faSquarePen} from '@fortawesome/free-solid-svg-icons';
 
 type UserProfileProps = NativeStackScreenProps<
   RootStackParamList,
@@ -121,7 +125,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <Text>Loading profile...</Text>
+        <Text style={{color: 'grey'}}>Loading profile...</Text>
       </SafeAreaView>
     );
   }
@@ -131,10 +135,35 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
       <StatusBar backgroundColor="#c9eaff" barStyle="dark-content" />
       <ScrollView
         style={styles.scrollView}
+        bounces={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
+        <View
+          style={{
+            backgroundColor: '#c9eaff',
+            padding: 20,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+          }}>
+          <Pressable onPress={() => navigation.goBack()}>
+            <FontAwesomeIcon
+              icon={faArrowLeftLong}
+              size={16}
+              style={{color: '#000000', marginLeft: 8}}
+            />
+          </Pressable>
+          <TouchableOpacity onPress={() => {}} style={styles.editButton}>
+            <FontAwesomeIcon
+              icon={faSquarePen}
+              size={12}
+              style={styles.editIcon}
+            />
+            <Text style={styles.editText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
         {/* Profile header with user info */}
+
         {userPersonalInfo && (
           <ProfileHeader
             navigation={navigation}
@@ -175,6 +204,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  editIcon: {
+    color: '#3b82f6',
+    marginRight: 4,
+  },
+  editText: {
+    color: '#3b82f6',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
   },
 });
 

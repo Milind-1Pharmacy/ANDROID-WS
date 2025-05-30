@@ -146,30 +146,6 @@ const getHealthStatus = (param: string, value?: string): HealthStatus => {
 };
 
 // Sub-components
-const Header = ({
-  navigation,
-  onEditPress,
-}: {
-  navigation: any;
-  onEditPress: () => void;
-}) => (
-  <View style={styles.headerContainer}>
-    <TouchableOpacity
-      onPress={() => navigation.goBack()}
-      style={styles.backButton}>
-      <FontAwesomeIcon
-        icon={faArrowLeftLong}
-        size={18}
-        style={styles.backIcon}
-      />
-    </TouchableOpacity>
-
-    <TouchableOpacity onPress={onEditPress} style={styles.editButton}>
-      <FontAwesomeIcon icon={faSquarePen} size={12} style={styles.editIcon} />
-      <Text style={styles.editText}>Edit</Text>
-    </TouchableOpacity>
-  </View>
-);
 
 const ProfileInfo = ({
   userPersonalInfo,
@@ -402,7 +378,7 @@ const ProfileComponent = ({
   return (
     <ScrollView style={styles.container}>
       <View style={styles.topSection}>
-        <Header navigation={navigation} onEditPress={handleEditPress} />
+        {/* <Header navigation={navigation} onEditPress={handleEditPress} /> */}
         <ProfileInfo userPersonalInfo={userPersonalInfo} />
       </View>
 
