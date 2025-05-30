@@ -19,6 +19,7 @@ import ImageTitleCard from './ImageTitleCard';
 import MProductCounterCard from './MProductCounterCard';
 import MImageTitleDateCard from './MImageTitleDateCard';
 import MDescItemCard from './MDescItemCard';
+import MedicationListCard from './MedcationListCard';
 export {
   CardsIndex,
   getCardByIndex,
@@ -42,4 +43,5 @@ export {
   MProductCounterCard,
   MImageTitleDateCard,
   MDescItemCard,
+  MedicationListCard,
 };
