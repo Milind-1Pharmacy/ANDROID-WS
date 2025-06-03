@@ -12,7 +12,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 
 // Components
 import {Header} from '../../commonComponents';
@@ -29,6 +32,7 @@ import {
 } from './types';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faArrowLeftLong, faSquarePen} from '@fortawesome/free-solid-svg-icons';
+import {SectionKey} from '@Constants';
 
 type UserProfileProps = NativeStackScreenProps<
   RootStackParamList,
@@ -49,7 +53,8 @@ type UserProfileProps = NativeStackScreenProps<
  * - Emergency contacts
  */
 const UserProfile: React.FC<UserProfileProps> = ({route}) => {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const userId = route.params?.userId || 'defaultUserId'; // Default userId if not provided
 
   // State management
@@ -153,7 +158,13 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
               style={{color: '#000000', marginLeft: 8}}
             />
           </Pressable>
-          <TouchableOpacity onPress={() => {}} style={styles.editButton}>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('EditScreen', {
+                section: 'personalDetails',
+              });
+            }}
+            style={styles.editButton}>
             <FontAwesomeIcon
               icon={faSquarePen}
               size={12}

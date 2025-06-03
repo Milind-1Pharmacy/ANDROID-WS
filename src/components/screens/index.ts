@@ -16,6 +16,7 @@ import ItemsListing from './ItemsListing';
 import RegistrationForm from './RegistrationForm';
 import HealthBook from './HealthBook';
 import UserProfile from './UserProfile';
+import EditScreen from './EditScreen';
 export {
   Home,
   LoginScreen,
@@ -35,4 +36,5 @@ export {
   RegistrationForm,
   HealthBook,
   UserProfile,
+  EditScreen,
 };
