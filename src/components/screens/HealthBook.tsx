@@ -120,16 +120,6 @@ interface UpdateMedication {
   value: any;
 }
 
-interface HealthParameters {
-  height: string;
-  weight: string;
-  bloodPressure: string;
-  bloodSugar: string;
-  spo2: string;
-  bpPhoto: CameraPhoto | null;
-  glucometerPhoto: CameraPhoto | null;
-  pulseOximeterPhoto: CameraPhoto | null;
-}
 // Constants
 
 const STRIP_COLORS = [

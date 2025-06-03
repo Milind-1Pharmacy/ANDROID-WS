@@ -285,6 +285,17 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({navigation, route}) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {verifyingOTP && (
+        <View
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+            width: '100%',
+          }}>
+          {<LoadingOverlay />}
+        </View>
+      )}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -350,8 +361,6 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({navigation, route}) => {
             </Text>
           </Text>
         </Animated.View>
-
-        {verifyingOTP && <LoadingOverlay />}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

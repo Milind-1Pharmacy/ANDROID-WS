@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   Animated,
   View,
+  StatusBar,
 } from 'react-native';
 import {
   Button,
@@ -156,6 +157,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar backgroundColor="#2e6acf" barStyle="light-content" />
+
       <KeyboardAvoidingView
         behavior="padding"
         style={styles.container}

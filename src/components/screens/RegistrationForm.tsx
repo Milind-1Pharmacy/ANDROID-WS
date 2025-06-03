@@ -23,6 +23,7 @@ import {
   Pressable,
   Alert,
   Linking,
+  StatusBar,
 } from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import DatePicker from 'react-native-date-picker';
@@ -66,6 +67,7 @@ interface FormData {
   lastName: string;
   fullName: string;
   mobileNumber: string;
+  bloodGroup: string;
   gender: Gender;
   dateOfBirth: Date;
   age: string;
@@ -79,6 +81,11 @@ interface FormData {
     longitude: number | null;
   };
   familyMembers: Record<FamilyMemberType, string>;
+  emergencyContacts: Array<{
+    name: string;
+    relationship: string;
+    phone: string;
+  }>;
   prescription: {
     uri: string;
     name: string;
@@ -139,6 +146,7 @@ const INITIAL_FORM_DATA: FormData = {
   fullName: '',
   mobileNumber: '',
   gender: '',
+  bloodGroup: '',
   dateOfBirth: new Date('2000-01-01'),
   age: '',
   flatNumber: '',
@@ -155,6 +163,13 @@ const INITIAL_FORM_DATA: FormData = {
     female: '0',
     children: '0',
   },
+  emergencyContacts: [
+    {
+      name: '',
+      relationship: '',
+      phone: '',
+    },
+  ],
   prescription: [],
   healthIssues: {
     bloodPressure: false,
@@ -166,6 +181,17 @@ const INITIAL_FORM_DATA: FormData = {
   },
 };
 
+const BLOOD_GROUP_OPTIONS = [
+  {label: 'A+', value: 'A+'},
+  {label: 'A-', value: 'A-'},
+  {label: 'B+', value: 'B+'},
+  {label: 'B-', value: 'B-'},
+  {label: 'AB+', value: 'AB+'},
+  {label: 'AB-', value: 'AB-'},
+  {label: 'O+', value: 'O+'},
+  {label: 'O-', value: 'O-'},
+];
+
 const RegistrationForm = () => {
   // State
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
@@ -176,6 +202,7 @@ const RegistrationForm = () => {
   const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [profilePicModalVisible, setProfilePicModalVisible] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [showBloodGroupPicker, setShowBloodGroupPicker] = useState(false);
 
   const navigation = useNavigation<RegistrationFormNavigationProp>();
 
@@ -345,51 +372,6 @@ const RegistrationForm = () => {
     );
   }, []);
 
-  // const getCurrentLocationandAddress = useCallback(async () => {
-  //   await geolocationInit();
-  //   setLocationLoading(true);
-
-  //   try {
-  //     getCurrentLocation(
-  //       async position => {
-  //         const {latitude, longitude} = position.coords;
-  //         updateField('location', {latitude, longitude});
-
-  //         getCurrentAddress(
-  //           position,
-  //           (addressResults: any) => {
-  //             if (addressResults.length > 0) {
-  //               updateField('address', addressResults[0].formattedAddress);
-  //               Alert.alert(
-  //                 'Success',
-  //                 'Location and address captured successfully',
-  //               );
-  //             }
-  //             setLocationLoading(false);
-  //           },
-  //           (error: any) => {
-  //             console.error('Geocoding error:', error);
-  //             setLocationLoading(false);
-  //             Alert.alert(
-  //               'Location Found',
-  //               'Could not determine exact address',
-  //             );
-  //           },
-  //         );
-  //       },
-  //       error => {
-  //         console.error('Location error:', error);
-  //         setLocationLoading(false);
-  //         Alert.alert('Error', 'Failed to get location. Please try again.');
-  //       },
-  //     );
-  //   } catch (error) {
-  //     console.error('Permission error:', error);
-  //     setLocationLoading(false);
-  //     Alert.alert('Error', 'Location permission denied');
-  //   }
-  // }, []);
-
   const handleLocationSelect = (selectedLocation: LocationData) => {
     setFormData(prev => ({
       ...prev,
@@ -475,6 +457,33 @@ const RegistrationForm = () => {
       updateField('age', calculateAge(selectedDate));
     },
     [calculateAge],
+  );
+  const addEmergencyContact = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      emergencyContacts: [
+        ...prev.emergencyContacts,
+        {
+          name: '',
+          relationship: '',
+          phone: '',
+        },
+      ],
+    }));
+  }, []);
+
+  const removeEmergencyContact = useCallback(
+    (index: number) => {
+      if (formData.emergencyContacts.length > 1) {
+        setFormData(prev => ({
+          ...prev,
+          emergencyContacts: prev.emergencyContacts.filter(
+            (_, i) => i !== index,
+          ),
+        }));
+      }
+    },
+    [formData.emergencyContacts.length],
   );
 
   const validateForm = useCallback(() => {
@@ -677,6 +686,61 @@ const RegistrationForm = () => {
     [formData.prescription, getFileIcon, handleRemovePrescription],
   );
 
+  const renderBloodGroupPicker = useCallback(() => {
+    if (!showBloodGroupPicker) return null;
+
+    return (
+      <Modal
+        visible={showBloodGroupPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBloodGroupPicker(false)}>
+        <TouchableWithoutFeedback
+          onPress={() => setShowBloodGroupPicker(false)}>
+          <View style={styles.modalOverlay}>
+            <Animated.View style={styles.bottomSheet}>
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>Select Blood Group</Text>
+                <TouchableOpacity
+                  onPress={() => setShowBloodGroupPicker(false)}>
+                  <Text style={styles.closeButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.sheetContent}>
+                {BLOOD_GROUP_OPTIONS.map(option => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.genderOption,
+                      formData.bloodGroup === option.value &&
+                        styles.selectedGender,
+                    ]}
+                    onPress={() => {
+                      updateField('bloodGroup', option.value);
+                      setShowBloodGroupPicker(false);
+                    }}>
+                    <Text
+                      style={[
+                        styles.genderOptionText,
+                        formData.bloodGroup === option.value &&
+                          styles.selectedGenderText,
+                      ]}>
+                      {option.label}
+                    </Text>
+                    {formData.bloodGroup === option.value && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    );
+  }, [showBloodGroupPicker, formData.bloodGroup]);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -686,6 +750,7 @@ const RegistrationForm = () => {
         headerBaseStyle={styles.header}
         screenTitleLoadingPlaceholder="Registration Form"
       />
+      <StatusBar backgroundColor="#2e6acf" barStyle="light-content" />
 
       <ScrollView style={styles.container}>
         <View style={styles.formContainer}>
@@ -790,34 +855,64 @@ const RegistrationForm = () => {
               )}
             </View>
 
-            {/* Gender */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>
-                Sex <Text style={styles.requiredIndicator}>*</Text>
-              </Text>
-              <TouchableOpacity
+            {/* Gender and Blood Group*/}
+            <View style={styles.rowContainer}>
+              <View
                 style={[
-                  styles.textInput,
-                  styles.dropdownField,
-                  errors.gender ? styles.inputError : undefined,
-                ]}
-                onPress={() => setShowGenderPicker(true)}>
-                <Text
-                  style={
-                    formData.gender
-                      ? styles.selectedText
-                      : styles.placeholderText
-                  }>
-                  {selectedGenderLabel}
-                </Text>
-                <Text style={styles.dropdownIcon}>▼</Text>
-              </TouchableOpacity>
-              {renderGenderPicker()}
-              {errors.gender && (
-                <Text style={styles.errorText}>{errors.gender}</Text>
-              )}
+                  styles.fieldContainer,
+                  styles.halfWidth,
+                  styles.rightMargin,
+                ]}>
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>
+                    Gender <Text style={styles.requiredIndicator}>*</Text>
+                  </Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.textInput,
+                      styles.dropdownField,
+                      errors.gender ? styles.inputError : undefined,
+                    ]}
+                    onPress={() => setShowGenderPicker(true)}>
+                    <Text
+                      style={
+                        formData.gender
+                          ? styles.selectedText
+                          : styles.placeholderText
+                      }>
+                      {selectedGenderLabel}
+                    </Text>
+                    <Text style={styles.dropdownIcon}>▼</Text>
+                  </TouchableOpacity>
+                  {renderGenderPicker()}
+                  {errors.gender && (
+                    <Text style={styles.errorText}>{errors.gender}</Text>
+                  )}
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.fieldContainer,
+                  styles.halfWidth,
+                  styles.leftMargin,
+                ]}>
+                <Text style={styles.label}>Blood Group</Text>
+                <TouchableOpacity
+                  style={[styles.textInput, styles.dropdownField]}
+                  onPress={() => setShowBloodGroupPicker(true)}>
+                  <Text
+                    style={
+                      formData.bloodGroup
+                        ? styles.selectedText
+                        : styles.placeholderText
+                    }>
+                    {formData.bloodGroup || 'Select Blood Group'}
+                  </Text>
+                  <Text style={styles.dropdownIcon}>▼</Text>
+                </TouchableOpacity>
+                {renderBloodGroupPicker()}
+              </View>
             </View>
-
             {/* Date of Birth and Age */}
             <View style={styles.rowContainer}>
               <View
@@ -1041,6 +1136,107 @@ const RegistrationForm = () => {
               <Text style={styles.errorText}>{errors.familyMembers}</Text>
             )}
           </View>
+          {/* Emergency Contacts Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+            <Text style={styles.subSectionText}>
+              Please provide your emergency contact
+            </Text>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.emergencyContactsScrollContainer}>
+              {formData.emergencyContacts.map((contact, index) => (
+                <View key={index} style={styles.emergencyContactCard}>
+                  <View style={styles.emergencyContactHeader}>
+                    <Text style={styles.emergencyContactTitle}>
+                      Contact {index + 1}
+                    </Text>
+                    {formData.emergencyContacts.length > 1 && (
+                      <TouchableOpacity
+                        onPress={() => removeEmergencyContact(index)}
+                        style={styles.removeContactButton}>
+                        <Text style={styles.removeContactButtonText}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <View style={styles.emergencyContactFields}>
+                    <View style={styles.fieldContainer}>
+                      <Text style={[styles.label, {marginBottom: 8}]}>
+                        Full Name
+                      </Text>
+                      <TextInput
+                        style={[styles.textInput]}
+                        placeholder="Contact name"
+                        value={contact.name}
+                        onChangeText={text => {
+                          const updatedContacts = [
+                            ...formData.emergencyContacts,
+                          ];
+                          updatedContacts[index].name = text;
+                          updateField('emergencyContacts', updatedContacts);
+                        }}
+                        placeholderTextColor="#aaa"
+                      />
+                    </View>
+
+                    <View style={styles.fieldContainer}>
+                      <Text style={[styles.label, {marginBottom: 8}]}>
+                        Relationship
+                      </Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="e.g., Spouse, Parent"
+                        value={contact.relationship}
+                        onChangeText={text => {
+                          const updatedContacts = [
+                            ...formData.emergencyContacts,
+                          ];
+                          updatedContacts[index].relationship = text;
+                          updateField('emergencyContacts', updatedContacts);
+                        }}
+                        placeholderTextColor="#aaa"
+                      />
+                    </View>
+
+                    <View style={styles.fieldContainer}>
+                      <Text style={[styles.label, {marginBottom: 8}]}>
+                        Phone Number
+                      </Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Contact phone"
+                        value={contact.phone}
+                        onChangeText={text => {
+                          const updatedContacts = [
+                            ...formData.emergencyContacts,
+                          ];
+                          updatedContacts[index].phone = text;
+                          updateField('emergencyContacts', updatedContacts);
+                        }}
+                        keyboardType="phone-pad"
+                        placeholderTextColor="#aaa"
+                      />
+                    </View>
+                  </View>
+                </View>
+              ))}
+
+              {/* Add More Contact Card */}
+              <TouchableOpacity
+                style={styles.addContactCard}
+                onPress={addEmergencyContact}>
+                <View style={styles.addContactContent}>
+                  <Text style={styles.addContactIcon}>+</Text>
+                  <Text style={styles.addContactText}>
+                    Add More{'\n'}Contact
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
 
           {/* Prescription Upload Section */}
           <View style={styles.section}>
@@ -1205,7 +1401,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: 14,
     backgroundColor: 'white',
     color: '#333',
   },
@@ -1230,6 +1426,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#aaa',
+    fontSize: 12,
   },
   errorText: {
     color: 'red',
@@ -1446,6 +1643,72 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  emergencyContactsScrollContainer: {
+    paddingRight: 16,
+  },
+  emergencyContactCard: {
+    width: 280,
+    backgroundColor: '#f8f9ff',
+    borderRadius: 12,
+    padding: 8,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#e1e8ff',
+  },
+  emergencyContactHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emergencyContactTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2E6ACF',
+  },
+  removeContactButton: {
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeContactButtonText: {
+    color: '#ff4444',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  emergencyContactFields: {
+    // gap: 8,
+  },
+  addContactCard: {
+    width: 150,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#2E6ACF',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
+  },
+  addContactContent: {
+    alignItems: 'center',
+  },
+  addContactIcon: {
+    fontSize: 32,
+    color: '#2E6ACF',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  addContactText: {
+    fontSize: 16,
+    color: '#2E6ACF',
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 
