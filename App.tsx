@@ -438,7 +438,7 @@ const AppNavigator = memo(() => {
 
   // Initialization effect with cleanup
   useEffect(() => {
-    const effectiveStoreId = 'model_medicals_demo';
+    const effectiveStoreId = 'urmedz';
     setStoreId(effectiveStoreId);
     let cleanup: (() => void) | undefined;
     fetchConfig(effectiveStoreId).then(returnedCleanup => {
