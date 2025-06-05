@@ -33,7 +33,7 @@ import {
   Divider,
   View,
 } from 'native-base';
-import {useForm, Controller} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import DocumentPicker from 'react-native-document-picker';
 import {
   CameraOptions,

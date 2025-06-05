@@ -1,7 +1,8 @@
 import React from 'react';
 import {Text, View} from 'react-native';
+import { chipProps } from '../types';
 
-const EmergencyContactForm = () => {
+const EmergencyContactForm : React.FC <chipProps> = () => {
   return (
     <View>
       <Text>EmergencyContactForm</Text>

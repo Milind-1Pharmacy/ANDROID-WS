@@ -144,41 +144,30 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <View
-          style={{
-            backgroundColor: '#c9eaff',
-            padding: 20,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-          }}>
-          <Pressable onPress={() => navigation.goBack()}>
-            <FontAwesomeIcon
-              icon={faArrowLeftLong}
-              size={16}
-              style={{color: '#000000', marginLeft: 8}}
-            />
-          </Pressable>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('EditScreen', {
-                section: 'personalDetails',
-              });
-            }}
-            style={styles.editButton}>
-            <FontAwesomeIcon
-              icon={faSquarePen}
-              size={12}
-              style={styles.editIcon}
-            />
-            <Text style={styles.editText}>Edit</Text>
-          </TouchableOpacity>
-        </View>
+        {!userPersonalInfo && (
+          <View
+            style={{
+              backgroundColor: '#c9eaff',
+              padding: 20,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}>
+            <Pressable onPress={() => navigation.goBack()}>
+              <FontAwesomeIcon
+                icon={faArrowLeftLong}
+                size={16}
+                style={{color: '#000000', marginLeft: 8}}
+              />
+            </Pressable>
+          </View>
+        )}
         {/* Profile header with user info */}
 
         {userPersonalInfo && (
           <ProfileHeader
             navigation={navigation}
             userPersonalInfo={userPersonalInfo}
+            userId={userId}
           />
         )}
 

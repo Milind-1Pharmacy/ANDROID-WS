@@ -3,13 +3,15 @@ import {
   ContactInfoForm,
   EmergencyContactForm,
   PersonalDetailsForm,
+  AddMediationForm,
+  MedicalReports,
 } from './tabs';
 
 export const EDIT_SECTIONS: Record<
   SectionKey,
   {
     label: string;
-    component: React.ComponentType;
+    component: React.ComponentType<any>;
   }
 > = {
   personalDetails: {
@@ -23,5 +25,13 @@ export const EDIT_SECTIONS: Record<
   emergencyContacts: {
     label: 'Emergency Contacts',
     component: EmergencyContactForm,
+  },
+  addMedication: {
+    label: 'Add Medication',
+    component: AddMediationForm,
+  },
+  reports: {
+    label: 'Reports',
+    component: MedicalReports,
   },
 };

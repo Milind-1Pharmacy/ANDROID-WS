@@ -281,6 +281,8 @@ export type RootStackParamList = {
   Support: undefined;
   EditScreen: {
     section?: SectionKey;
+    userId : string,
+    initialData : any
   };
 };
 

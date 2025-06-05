@@ -1,5 +1,12 @@
 import React from 'react';
-import {Image, Text, View, ScrollView, StyleSheet} from 'react-native';
+import {
+  Image,
+  Text,
+  View,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {
@@ -14,6 +21,7 @@ import {
   faCrown,
   faFileContract,
 } from '@fortawesome/free-solid-svg-icons';
+import {SectionKey} from '@Constants';
 
 // Types
 type HealthStatus = {
@@ -24,6 +32,7 @@ type HealthStatus = {
 
 type UserPersonalInfo = {
   firstName: string;
+  lastName?: string;
   gender?: string;
   dateOfBirth?: string;
   mobileNumber?: string;
@@ -46,6 +55,7 @@ type UserPersonalInfo = {
 type ProfileComponentProps = {
   navigation: any;
   userPersonalInfo: UserPersonalInfo;
+  userId: string;
 };
 
 // Constants
@@ -149,33 +159,63 @@ const getHealthStatus = (param: string, value?: string): HealthStatus => {
 
 const ProfileInfo = ({
   userPersonalInfo,
+  navigation,
+  onEditPress,
 }: {
   userPersonalInfo: UserPersonalInfo;
+  navigation: any;
+  onEditPress?: () => void;
 }) => (
-  <View style={styles.profileInfoContainer}>
-    <View style={styles.profileImageContainer}>
-      <Image
-        source={{uri: userPersonalInfo?.profilePic}}
-        style={styles.profileImage}
-        resizeMode="cover"
-      />
-    </View>
-
-    <Text style={styles.profileName}>{userPersonalInfo?.firstName}</Text>
-
-    {userPersonalInfo.subscription && (
-      <View style={styles.subscriptionBadge}>
+  <>
+    <View
+      style={{
+        backgroundColor: 'transparent',
+        padding: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+      }}>
+      <Pressable onPress={() => navigation.goBack()}>
         <FontAwesomeIcon
-          icon={faCrown}
-          size={12}
-          style={styles.subscriptionIcon}
+          icon={faArrowLeftLong}
+          size={16}
+          style={{color: '#000000', marginLeft: 8}}
         />
-        <Text style={styles.subscriptionText}>
-          {userPersonalInfo.subscription.plan.toUpperCase()} MEMBER
-        </Text>
+      </Pressable>
+      <TouchableOpacity
+        onPress={() => {
+          if (onEditPress) onEditPress();
+        }}
+        style={styles.editButton}>
+        <FontAwesomeIcon icon={faSquarePen} size={12} style={styles.editIcon} />
+        <Text style={styles.editText}>Edit</Text>
+      </TouchableOpacity>
+    </View>
+    <View style={styles.profileInfoContainer}>
+      <View style={styles.profileImageContainer}>
+        <Image
+          source={{uri: userPersonalInfo?.profilePic}}
+          style={styles.profileImage}
+          resizeMode="cover"
+        />
       </View>
-    )}
-  </View>
+
+      <Text style={styles.profileName}>{userPersonalInfo?.firstName}</Text>
+
+      {userPersonalInfo.subscription && (
+        <View style={styles.subscriptionBadge}>
+          <FontAwesomeIcon
+            icon={faCrown}
+            size={12}
+            style={styles.subscriptionIcon}
+          />
+          <Text style={styles.subscriptionText}>
+            {userPersonalInfo.subscription.plan.toUpperCase()} MEMBER
+          </Text>
+        </View>
+      )}
+    </View>
+  </>
 );
 
 const StatsRow = ({userPersonalInfo}: {userPersonalInfo: UserPersonalInfo}) => (
@@ -366,20 +406,53 @@ const HealthVitalItem = ({
 const ProfileComponent = ({
   navigation,
   userPersonalInfo,
+  userId,
 }: ProfileComponentProps) => {
-  const handleEditPress = () => {
-    // Handle edit action
+  const getSectionData = (section: SectionKey) => {
+    switch (section) {
+      case 'personalDetails':
+        return {
+          firstName: userPersonalInfo.firstName,
+          lastName: userPersonalInfo.lastName,
+          gender: userPersonalInfo.gender,
+          dateOfBirth: userPersonalInfo.dateOfBirth,
+          profilePic: userPersonalInfo.profilePic,
+          bloodGroup: userPersonalInfo.healthParameters?.bloodGroup,
+          height: userPersonalInfo.healthParameters?.height,
+          weight: userPersonalInfo.healthParameters?.weight,
+        };
+      case 'contactDetails':
+        return {
+          email: userPersonalInfo.email,
+          mobileNumber: userPersonalInfo.mobileNumber,
+          address: userPersonalInfo.address,
+        };
+      case 'healthVitals':
+        return {
+          healthParameters: userPersonalInfo.healthParameters,
+        };
+    }
   };
 
-  const handleReportsPress = () => {
-    // Handle reports action
+  // Unified edit handler
+  const handleEditPress = (section: SectionKey) => {
+    navigation.navigate('EditScreen', {
+      section,
+      initialData: getSectionData(section),
+      userId,
+    });
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.topSection}>
-        {/* <Header navigation={navigation} onEditPress={handleEditPress} /> */}
-        <ProfileInfo userPersonalInfo={userPersonalInfo} />
+        {/* <Header navigation={navigation} onEditPress={handleContactEditPress} /> */}
+
+        <ProfileInfo
+          userPersonalInfo={userPersonalInfo}
+          navigation={navigation}
+          onEditPress={() => handleEditPress('personalDetails')}
+        />
       </View>
 
       <StatsRow userPersonalInfo={userPersonalInfo} />
@@ -387,11 +460,11 @@ const ProfileComponent = ({
       <View style={styles.bottomSection}>
         <ContactCard
           userPersonalInfo={userPersonalInfo}
-          onEditPress={handleEditPress}
+          onEditPress={() => handleEditPress('contactDetails')}
         />
         <HealthVitalsCard
           userPersonalInfo={userPersonalInfo}
-          onReportsPress={handleReportsPress}
+          onReportsPress={() => handleEditPress('healthVitals')}
         />
       </View>
     </ScrollView>
