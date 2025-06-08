@@ -108,6 +108,8 @@ export interface UserProfileInterface {
       profileCompleteness: number;
       lastHealthUpdateDaysAgo: number;
     };
+    prescription: Array<any>;
+    healthRecords: Array<any>;
   };
 }
 
@@ -135,6 +137,10 @@ export interface userPersonalInfoInterface {
     endDate: string;
     status: string;
   };
+  prescription: Array<any>;
+  healthRecords: Array<any>;
+  navigation?: any;
+  userId?: string;
 }
 
 export interface userFamilyInfoInterface {
@@ -148,6 +154,8 @@ export interface userFamilyInfoInterface {
     relationship: string;
     phone: string;
   }>;
+  navigation?: any;
+  userId?: string;
 }
 
 export interface userHealthDetailsInterface {
@@ -171,4 +179,7 @@ export interface userHealthDetailsInterface {
     skuId?: string;
     imageUrl?: string;
   }>;
+  navigation?: any;
+  userId?: string;
+  storeId?: string;
 }

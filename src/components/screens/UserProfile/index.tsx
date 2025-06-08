@@ -1,5 +1,5 @@
 // src/components/screens/UserProfile/index.tsx
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -33,6 +33,7 @@ import {
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faArrowLeftLong, faSquarePen} from '@fortawesome/free-solid-svg-icons';
 import {SectionKey} from '@Constants';
+import {AuthContext} from '@contextProviders';
 
 type UserProfileProps = NativeStackScreenProps<
   RootStackParamList,
@@ -56,7 +57,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const userId = route.params?.userId || 'defaultUserId'; // Default userId if not provided
-
+  const {storeId} = useContext(AuthContext);
   // State management
   const [userPersonalInfo, setUserPersonalInfo] =
     useState<userPersonalInfoInterface | null>(null);
@@ -94,6 +95,8 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
         healthParameters: mockUserData.user.healthParameters,
         address: mockUserData.user.address,
         subscription: mockUserData.user.subscription,
+        prescription: mockUserData.user.prescription,
+        healthRecords: mockUserData.user.healthRecords,
       });
 
       setUserFamilyInfo({
@@ -176,6 +179,9 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
           <MedicationCard
             healthIssues={userHealthDetails.healthIssues}
             currentMedications={userHealthDetails.currentMedications}
+            navigation={navigation}
+            userId={userId}
+            storeId={storeId ?? undefined}
           />
         )}
 
@@ -184,6 +190,8 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
           <FamilyInfo
             familyMembers={userFamilyInfo.familyMembers}
             emergencyContacts={userFamilyInfo.emergencyContacts}
+            navigation={navigation}
+            userId={userId}
           />
         )}
       </ScrollView>

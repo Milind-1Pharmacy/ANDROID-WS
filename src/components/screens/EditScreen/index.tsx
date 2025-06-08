@@ -38,8 +38,15 @@ const EditScreen = () => {
     section,
     userId,
     initialData,
-  }: {section?: SectionKey; userId?: string; initialData?: any} =
-    route.params || {};
+    storeId,
+    onCancel,
+  }: {
+    section?: SectionKey;
+    userId?: string;
+    initialData?: any;
+    storeId?: string;
+    onCancel?: () => void;
+  } = route.params || {};
 
   // Debug logs — helpful during dev/testing
   if (__DEV__) {
@@ -177,10 +184,12 @@ const EditScreen = () => {
         ))}
       </ScrollView>
 
-      <View style={{flex: 1, padding: 16}}>
+      <View style={{flex: 1}}>
         <SelectedComponent
           initialData={initialData}
           onSubmit={handleSubmit}
+          storeId={storeId}
+          onCancel={() => navigation.goBack()}
           /**
            * Additional props that could be passed to all forms:
            * - loadingState: For API operation feedback

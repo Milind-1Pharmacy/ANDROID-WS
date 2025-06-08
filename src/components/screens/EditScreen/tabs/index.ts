@@ -2,12 +2,12 @@ import ContactInfoForm from './ContactInfoForm';
 import EmergencyContactForm from './EmergencyContactForm';
 import PersonalDetailsForm from './PersonalDetailsForm';
 import AddMediationForm from './AddMediationForm';
-import MedicalReports from './MedicalReports';
+import HealthParamForm from './HealthParamForm';
 
 export {
   ContactInfoForm,
   EmergencyContactForm,
   PersonalDetailsForm,
   AddMediationForm,
-  MedicalReports,
+  HealthParamForm,
 };

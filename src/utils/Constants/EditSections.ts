@@ -3,7 +3,8 @@ export const SECTION_KEYS = [
   'contactInfo',
   'emergencyContacts',
   'addMedication',
-  'reports'
+  'reports',
+  'healthParameters',
 ];
 
 export type SectionKey = (typeof SECTION_KEYS)[number];

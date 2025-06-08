@@ -4,7 +4,7 @@ import {
   EmergencyContactForm,
   PersonalDetailsForm,
   AddMediationForm,
-  MedicalReports,
+  HealthParamForm,
 } from './tabs';
 
 export const EDIT_SECTIONS: Record<
@@ -30,8 +30,8 @@ export const EDIT_SECTIONS: Record<
     label: 'Add Medication',
     component: AddMediationForm,
   },
-  reports: {
-    label: 'Reports',
-    component: MedicalReports,
+  healthParameters: {
+    label: 'Health Parameters',
+    component: HealthParamForm,
   },
 };

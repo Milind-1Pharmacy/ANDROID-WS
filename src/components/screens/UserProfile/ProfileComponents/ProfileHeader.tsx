@@ -50,6 +50,8 @@ type UserPersonalInfo = {
     bloodSugar?: string;
     spo2?: string;
   };
+  prescription?: any;
+  healthRecords?: any;
 };
 
 type ProfileComponentProps = {
@@ -323,11 +325,11 @@ const HealthVitalsCard = ({
       <Text style={styles.cardTitle}>Health Vitals</Text>
       <TouchableOpacity onPress={onReportsPress} style={styles.cardEditButton}>
         <FontAwesomeIcon
-          icon={faFileContract}
+          icon={faSquarePen}
           size={12}
           style={styles.cardEditIcon}
         />
-        <Text style={styles.cardEditText}>See Reports</Text>
+        <Text style={styles.cardEditText}>Edit</Text>
       </TouchableOpacity>
     </View>
 
@@ -354,6 +356,31 @@ const HealthVitalsCard = ({
         param={HEALTH_PARAMETERS.SPO2}
       />
     </View>
+    <Pressable
+      onPress={onReportsPress}
+      style={{
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 8,
+        backgroundColor: COLORS.primary,
+        marginTop: 12,
+        flexDirection: 'row',
+        gap: 8,
+        borderColor: COLORS.primaryLight,
+        borderWidth: 1,
+      }}>
+      <Text style={{color: COLORS.textLight, fontSize: 16, fontWeight: '600'}}>
+        See your Reports
+      </Text>
+      <FontAwesomeIcon
+        icon={faFileContract}
+        size={18}
+        style={styles.cardEditIcon}
+        color={COLORS.textLight}
+      />
+    </Pressable>
   </View>
 );
 
@@ -418,18 +445,20 @@ const ProfileComponent = ({
           dateOfBirth: userPersonalInfo.dateOfBirth,
           profilePic: userPersonalInfo.profilePic,
           bloodGroup: userPersonalInfo.healthParameters?.bloodGroup,
-          height: userPersonalInfo.healthParameters?.height,
-          weight: userPersonalInfo.healthParameters?.weight,
+          // height: userPersonalInfo.healthParameters?.height,
+          // weight: userPersonalInfo.healthParameters?.weight,
         };
-      case 'contactDetails':
+      case 'contactInfo':
         return {
           email: userPersonalInfo.email,
           mobileNumber: userPersonalInfo.mobileNumber,
           address: userPersonalInfo.address,
         };
-      case 'healthVitals':
+      case 'healthParameters':
         return {
           healthParameters: userPersonalInfo.healthParameters,
+          prescription: userPersonalInfo.prescription,
+          healthRecords: userPersonalInfo.healthRecords,
         };
     }
   };
@@ -460,11 +489,11 @@ const ProfileComponent = ({
       <View style={styles.bottomSection}>
         <ContactCard
           userPersonalInfo={userPersonalInfo}
-          onEditPress={() => handleEditPress('contactDetails')}
+          onEditPress={() => handleEditPress('contactInfo')}
         />
         <HealthVitalsCard
           userPersonalInfo={userPersonalInfo}
-          onReportsPress={() => handleEditPress('healthVitals')}
+          onReportsPress={() => handleEditPress('healthParameters')}
         />
       </View>
     </ScrollView>

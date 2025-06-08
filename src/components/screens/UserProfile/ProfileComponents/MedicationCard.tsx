@@ -10,6 +10,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faShieldAlt, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {MedicationListCard} from '@HouseOfCards';
 import {userHealthDetailsInterface} from '../types';
+import {SectionKey} from '@Constants';
 
 // Constants
 const COLORS = {
@@ -128,15 +129,35 @@ const EmptyHealthState = ({onAddPress}: {onAddPress: () => void}) => (
 const MedicationCard: React.FC<userHealthDetailsInterface> = ({
   healthIssues,
   currentMedications,
+  userId,
+  navigation,
 }) => {
   const activeHealthIssues = getActiveHealthIssues(healthIssues);
 
-  const handleAddMedication = () => {
+  const getSectionData = (section: SectionKey) => {
+    switch (section) {
+      case 'addMedication':
+        return currentMedications;
+      case 'conditions':
+        return activeHealthIssues;
+    }
+  };
+  const handleAddMedication = (section: SectionKey) => {
     console.log('Add medication pressed');
+    navigation.navigate('EditScreen', {
+      section,
+      initialData: getSectionData(section),
+      userId,
+    });
   };
 
-  const handleAddCondition = () => {
+  const handleAddCondition = (section: SectionKey) => {
     console.log('Add condition pressed');
+    navigation.navigate('EditScreen', {
+      section,
+      initialData: getSectionData(section),
+      userId,
+    });
   };
 
   return (
@@ -166,10 +187,16 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
                   onPress={() => console.log('Card pressed', medication.id)}
                 />
               ))}
-              <MedicationListCard isAddCard onPress={handleAddMedication} />
+              <MedicationListCard
+                isAddCard
+                onPress={() => handleAddMedication('addMedication')}
+              />
             </>
           ) : (
-            <MedicationListCard isEmptyState onPress={handleAddMedication} />
+            <MedicationListCard
+              isEmptyState
+              onPress={() => handleAddMedication('addMedication')}
+            />
           )}
         </ScrollView>
       </View>
@@ -197,7 +224,9 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
             ))}
           </ScrollView>
         ) : (
-          <EmptyHealthState onAddPress={handleAddCondition} />
+          <EmptyHealthState
+            onAddPress={() => handleAddCondition('addMedication')}
+          />
         )}
       </View>
     </View>
