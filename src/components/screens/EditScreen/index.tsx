@@ -65,6 +65,43 @@ const EditScreen = () => {
 
   const SelectedComponent = EDIT_SECTIONS[selectedSection].component;
 
+  const getSectionData = (section: SectionKey) => {
+    if (!initialData) return {};
+
+    switch (section) {
+      case 'personalDetails':
+        return {
+          firstName: initialData.firstName,
+          lastName: initialData.lastName,
+          gender: initialData.gender,
+          dateOfBirth: initialData.dateOfBirth,
+          profilePic: initialData.profilePic,
+          bloodGroup: initialData.healthParameters?.bloodGroup,
+          // height: initialData.healthParameters?.height,
+          // weight: initialData.healthParameters?.weight,
+        };
+      case 'contactInfo':
+        return {
+          email: initialData.email,
+          mobileNumber: initialData.mobileNumber,
+          address: initialData.address,
+        };
+      case 'healthParameters':
+        return {
+          healthParameters: initialData.healthParameters,
+          prescription: initialData.prescription,
+          healthRecords: initialData.healthRecords,
+        };
+      case 'familyMembers':
+        return initialData.familyMembers;
+      case 'emergencyContacts':
+        return initialData.emergencyContacts;
+      case 'addMedication':
+        return initialData.currentMedications;
+      case 'conditions':
+        return initialData.activeHealthIssues;
+    }
+  };
   /**
    * Optimized Form Submission Handler
    *
@@ -186,7 +223,7 @@ const EditScreen = () => {
 
       <View style={{flex: 1}}>
         <SelectedComponent
-          initialData={initialData}
+          initialData={getSectionData(selectedSection)}
           onSubmit={handleSubmit}
           storeId={storeId}
           onCancel={() => navigation.goBack()}

@@ -129,35 +129,13 @@ const EmptyHealthState = ({onAddPress}: {onAddPress: () => void}) => (
 const MedicationCard: React.FC<userHealthDetailsInterface> = ({
   healthIssues,
   currentMedications,
-  userId,
-  navigation,
+  handleEditPress,
 }) => {
   const activeHealthIssues = getActiveHealthIssues(healthIssues);
 
-  const getSectionData = (section: SectionKey) => {
-    switch (section) {
-      case 'addMedication':
-        return currentMedications;
-      case 'conditions':
-        return activeHealthIssues;
-    }
-  };
   const handleAddMedication = (section: SectionKey) => {
     console.log('Add medication pressed');
-    navigation.navigate('EditScreen', {
-      section,
-      initialData: getSectionData(section),
-      userId,
-    });
-  };
-
-  const handleAddCondition = (section: SectionKey) => {
-    console.log('Add condition pressed');
-    navigation.navigate('EditScreen', {
-      section,
-      initialData: getSectionData(section),
-      userId,
-    });
+    handleEditPress?.(section);
   };
 
   return (
@@ -184,18 +162,19 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
                       ? parseFloat(medication.mrp)
                       : undefined,
                   }}
-                  onPress={() => console.log('Card pressed', medication.id)}
+                  onPress={() => () =>
+                    console.log('Card pressed', medication.id)}
                 />
               ))}
               <MedicationListCard
                 isAddCard
-                onPress={() => handleAddMedication('addMedication')}
+                onPress={() => () => handleAddMedication('addMedication')}
               />
             </>
           ) : (
             <MedicationListCard
               isEmptyState
-              onPress={() => handleAddMedication('addMedication')}
+              onPress={() => () => handleAddMedication('addMedication')}
             />
           )}
         </ScrollView>
@@ -225,7 +204,7 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
           </ScrollView>
         ) : (
           <EmptyHealthState
-            onAddPress={() => handleAddCondition('addMedication')}
+            onAddPress={() => handleAddMedication('addMedication')}
           />
         )}
       </View>

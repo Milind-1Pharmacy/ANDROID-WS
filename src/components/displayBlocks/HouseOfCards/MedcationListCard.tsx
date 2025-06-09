@@ -16,7 +16,11 @@ import {
   faRupeeSign,
   faPlus,
 } from '@fortawesome/free-solid-svg-icons';
-import {TABLET_CAPSULE_IMAGE_FALLBACK, RUPEE_SYMBOL} from '@Constants';
+import {
+  TABLET_CAPSULE_IMAGE_FALLBACK,
+  RUPEE_SYMBOL,
+  SectionKey,
+} from '@Constants';
 
 interface Medication {
   id: string;
@@ -31,7 +35,7 @@ interface Medication {
 
 interface MedicationListProps {
   medication?: Medication;
-  onPress?: () => void;
+  onPress?: () => (section: SectionKey) => any;
   isAddCard?: boolean;
   isEmptyState?: boolean;
 }

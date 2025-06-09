@@ -20,6 +20,7 @@ const FamilyInfo = ({
   emergencyContacts,
   navigation,
   userId,
+  handleEditPress,
 }: userFamilyInfoInterface) => {
   const getSectionData = (section: SectionKey) => {
     switch (section) {
@@ -31,14 +32,6 @@ const FamilyInfo = ({
   };
 
   console.log(getSectionData('emergencyContacts'));
-
-  const handleEditPress = (section: SectionKey) => {
-    navigation.navigate('EditScreen', {
-      section,
-      initialData: getSectionData(section),
-      userId,
-    });
-  };
 
   return (
     <View style={styles.container}>
@@ -115,7 +108,7 @@ const FamilyInfo = ({
           <Text style={styles.sectionTitle}>Emergency Contacts</Text>
           <TouchableOpacity
             onPress={() => {
-              handleEditPress('emergencyContacts');
+              handleEditPress?.('emergencyContacts');
             }}
             style={{
               flexDirection: 'row',

@@ -1,3 +1,4 @@
+import { SectionKey } from '@Constants';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from 'App';
 
@@ -156,6 +157,7 @@ export interface userFamilyInfoInterface {
   }>;
   navigation?: any;
   userId?: string;
+  handleEditPress?: (section: SectionKey) => void;
 }
 
 export interface userHealthDetailsInterface {
@@ -182,4 +184,7 @@ export interface userHealthDetailsInterface {
   navigation?: any;
   userId?: string;
   storeId?: string;
+  handleEditPress?: (section: SectionKey) => void;
 }
+
+export interface completeUserData {}

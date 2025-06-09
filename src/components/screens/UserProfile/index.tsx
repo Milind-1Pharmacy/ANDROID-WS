@@ -25,6 +25,7 @@ import {FamilyInfo, MedicationCard, ProfileHeader} from './ProfileComponents';
 import {RootStackParamList} from 'App';
 import mockdata from './mockdata';
 import {
+  completeUserData,
   userFamilyInfoInterface,
   userHealthDetailsInterface,
   userPersonalInfoInterface,
@@ -59,6 +60,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
   const userId = route.params?.userId || 'defaultUserId'; // Default userId if not provided
   const {storeId} = useContext(AuthContext);
   // State management
+  const [userData, setUserData] = useState<completeUserData | null>(null);
   const [userPersonalInfo, setUserPersonalInfo] =
     useState<userPersonalInfoInterface | null>(null);
   const [userFamilyInfo, setUserFamilyInfo] =
@@ -81,6 +83,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      setUserData(mockUserData.user);
       // Set user data from mock
       setUserPersonalInfo({
         fullName: mockUserData.user.fullName,
@@ -138,6 +141,16 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
     );
   }
 
+  console.log('++++++', userData, 'userData');
+
+  const handleEditPress = (section: SectionKey) => {
+    navigation.navigate('EditScreen', {
+      section, // e.g., 'personalDetails'
+      initialData: userData, // Pass COMPLETE data
+      userId,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#c9eaff" barStyle="dark-content" />
@@ -171,6 +184,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
             navigation={navigation}
             userPersonalInfo={userPersonalInfo}
             userId={userId}
+            handleEditPress={handleEditPress}
           />
         )}
 
@@ -182,6 +196,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
             navigation={navigation}
             userId={userId}
             storeId={storeId ?? undefined}
+            handleEditPress={handleEditPress}
           />
         )}
 
@@ -192,6 +207,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
             emergencyContacts={userFamilyInfo.emergencyContacts}
             navigation={navigation}
             userId={userId}
+            handleEditPress={handleEditPress}
           />
         )}
       </ScrollView>

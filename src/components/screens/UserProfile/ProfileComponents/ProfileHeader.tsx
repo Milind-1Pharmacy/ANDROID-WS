@@ -58,6 +58,7 @@ type ProfileComponentProps = {
   navigation: any;
   userPersonalInfo: UserPersonalInfo;
   userId: string;
+  handleEditPress: (section: SectionKey) => void;
 };
 
 // Constants
@@ -433,45 +434,8 @@ const HealthVitalItem = ({
 const ProfileComponent = ({
   navigation,
   userPersonalInfo,
-  userId,
+  handleEditPress,
 }: ProfileComponentProps) => {
-  const getSectionData = (section: SectionKey) => {
-    switch (section) {
-      case 'personalDetails':
-        return {
-          firstName: userPersonalInfo.firstName,
-          lastName: userPersonalInfo.lastName,
-          gender: userPersonalInfo.gender,
-          dateOfBirth: userPersonalInfo.dateOfBirth,
-          profilePic: userPersonalInfo.profilePic,
-          bloodGroup: userPersonalInfo.healthParameters?.bloodGroup,
-          // height: userPersonalInfo.healthParameters?.height,
-          // weight: userPersonalInfo.healthParameters?.weight,
-        };
-      case 'contactInfo':
-        return {
-          email: userPersonalInfo.email,
-          mobileNumber: userPersonalInfo.mobileNumber,
-          address: userPersonalInfo.address,
-        };
-      case 'healthParameters':
-        return {
-          healthParameters: userPersonalInfo.healthParameters,
-          prescription: userPersonalInfo.prescription,
-          healthRecords: userPersonalInfo.healthRecords,
-        };
-    }
-  };
-
-  // Unified edit handler
-  const handleEditPress = (section: SectionKey) => {
-    navigation.navigate('EditScreen', {
-      section,
-      initialData: getSectionData(section),
-      userId,
-    });
-  };
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.topSection}>
