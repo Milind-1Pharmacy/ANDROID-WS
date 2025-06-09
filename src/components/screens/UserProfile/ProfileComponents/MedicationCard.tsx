@@ -168,13 +168,13 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
               ))}
               <MedicationListCard
                 isAddCard
-                onPress={() => () => handleAddMedication('addMedication')}
+                onPress={() => handleAddMedication('addMedication')}
               />
             </>
           ) : (
             <MedicationListCard
               isEmptyState
-              onPress={() => () => handleAddMedication('addMedication')}
+              onPress={() => handleAddMedication('addMedication')}
             />
           )}
         </ScrollView>

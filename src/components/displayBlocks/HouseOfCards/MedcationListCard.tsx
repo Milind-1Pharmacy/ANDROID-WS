@@ -35,7 +35,7 @@ interface Medication {
 
 interface MedicationListProps {
   medication?: Medication;
-  onPress?: () => (section: SectionKey) => any;
+  onPress?: any;
   isAddCard?: boolean;
   isEmptyState?: boolean;
 }
@@ -47,6 +47,8 @@ const MedicationListCard: React.FC<MedicationListProps> = ({
   isEmptyState = false,
 }) => {
   if (isAddCard) {
+    console.log('isAddCard');
+
     return (
       <TouchableOpacity
         style={[styles.addCard]}
