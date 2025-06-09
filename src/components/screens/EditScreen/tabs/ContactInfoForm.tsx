@@ -52,7 +52,7 @@ const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
   const {
     control,
     handleSubmit,
-    formState: {errors},
+    formState: {errors, isValid}, // Add `isValid`
     getValues,
   } = useForm({
     defaultValues: {
@@ -64,16 +64,8 @@ const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
       address: initialData.address || '',
       ...initialData,
     },
+    mode: 'onChange', // Validate on every change
   });
-
-  const handleLocationSelect = (selectedLocation: LocationData) => {
-    setFormData(prev => ({
-      ...prev,
-      address: selectedLocation.address || '',
-      latitude: selectedLocation.lat ?? null,
-      longitude: selectedLocation.lng ?? null,
-    }));
-  };
 
   const handleFormSubmit = (data: any) => {
     const contactDetails = {
@@ -251,7 +243,12 @@ const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
           {/* Submit Button */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, styles.submitButton]}
+              style={[
+                styles.button,
+                styles.submitButton,
+                !isValid && styles.disabledButton,
+              ]}
+              disabled={!isValid}
               onPress={handleSubmit(handleFormSubmit)}>
               <Text style={styles.submitButtonText}>
                 Save Contact Information

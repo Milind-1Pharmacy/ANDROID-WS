@@ -353,7 +353,9 @@ const PersonalDetailsForm: React.FC<chipProps> = ({
 
           <View style={styles.row}>
             <View style={styles.halfWidth}>
-              <Text style={styles.label}>First Name</Text>
+              <Text style={styles.label}>
+                First Name <Text style={{color: 'red'}}>*</Text>
+              </Text>
               <Controller
                 control={control}
                 name="firstName"
@@ -377,7 +379,9 @@ const PersonalDetailsForm: React.FC<chipProps> = ({
             </View>
 
             <View style={styles.halfWidth}>
-              <Text style={styles.label}>Last Name</Text>
+              <Text style={styles.label}>
+                Last Name <Text style={{color: 'red'}}>*</Text>
+              </Text>
               <Controller
                 control={control}
                 name="lastName"
