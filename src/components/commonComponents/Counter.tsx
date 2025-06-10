@@ -112,7 +112,7 @@ const Counter = memo(
         <HStack
           alignItems="center"
           justifyContent="space-between"
-          style={styles.container}>
+          style={[styles.container, {maxHeight: 56}]}>
           <Button
             variant="ghost"
             p={buttonPadding}
