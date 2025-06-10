@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
   Text,
   View,
@@ -21,6 +21,10 @@ import {
   RUPEE_SYMBOL,
   SectionKey,
 } from '@Constants';
+import {TouchableWithoutFeedback} from 'react-native-gesture-handler';
+import {useContextSelector} from 'use-context-selector';
+import {FormStateContext} from '@contextProviders';
+import {Counter} from '@commonComponents';
 
 interface Medication {
   id: string;
@@ -46,6 +50,42 @@ const MedicationListCard: React.FC<MedicationListProps> = ({
   isAddCard = false,
   isEmptyState = false,
 }) => {
+  const handleAdd = useContextSelector(FormStateContext, v => v.handleAdd);
+  const handleSubtract = useContextSelector(
+    FormStateContext,
+    v => v.handleSubtract,
+  );
+  const cartItems = useContextSelector(FormStateContext, v => v.cart.items);
+
+  // Memoized cart item finder
+  const cartItem = useMemo(() => {
+    return cartItems.find((item: any) => item.id === medication?.id);
+  }, [cartItems, medication?.id]);
+
+  const currentQuantity = cartItem?.qty || 0;
+  console.log('medication', medication);
+
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleAddToCart = useCallback(() => {
+    if (medication) {
+      handleAdd({
+        id: medication.id,
+        name: medication.name,
+        price: medication.mrp,
+        imageUrl: medication.imageUrl ?? TABLET_CAPSULE_IMAGE_FALLBACK,
+        // Add any other necessary medication properties
+      });
+    }
+  }, [handleAdd, medication]);
+  const handleSubtractFromCart = useCallback(() => {
+    if (medication) {
+      handleSubtract({
+        id: medication.id,
+        // Add any other necessary medication properties
+      });
+    }
+  }, [handleSubtract, medication]);
+
   if (isAddCard) {
     console.log('isAddCard');
 
@@ -198,6 +238,37 @@ const MedicationListCard: React.FC<MedicationListProps> = ({
           </View>
         </View>
       )}
+
+      <View style={{marginTop: 12}}>
+        {medication?.isManual ? (
+          <>
+            <View
+              style={{
+                backgroundColor: '#E5E7EB',
+                height: 38,
+                borderRadius: 20,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+              <Text style={{color: '#9CA3AF'}}>Manual Entry</Text>
+            </View>
+          </>
+        ) : (
+          <Counter
+            value={currentQuantity}
+            add={handleAddToCart}
+            subtract={handleSubtractFromCart}
+            zeroCounterLabel="Add to Cart"
+            containerStyle={{
+              backgroundColor: '#6366F1',
+              height: 38,
+            }}
+            labelColor="#FFFFFF"
+            textSize={12}
+            showPlusIcon={false}
+          />
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
@@ -214,7 +285,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    marginRight: 12,
+    marginRight: 8,
   },
   addCard: {
     borderColor: '#FFFFFF',

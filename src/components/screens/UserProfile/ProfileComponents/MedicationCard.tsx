@@ -10,7 +10,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faShieldAlt, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {MedicationListCard} from '@HouseOfCards';
 import {userHealthDetailsInterface} from '../types';
-import {SectionKey} from '@Constants';
+import {SectionKey, TABLET_CAPSULE_IMAGE_FALLBACK} from '@Constants';
 
 // Constants
 const COLORS = {
@@ -138,6 +138,7 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
     handleEditPress?.(section);
   };
 
+
   return (
     <View style={styles.container}>
       {/* Medications Section */}
@@ -161,6 +162,8 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
                     mrp: medication.mrp
                       ? parseFloat(medication.mrp)
                       : undefined,
+                    imageUrl:
+                      medication.imageUrl ?? TABLET_CAPSULE_IMAGE_FALLBACK,
                   }}
                   onPress={() => () =>
                     console.log('Card pressed', medication.id)}
