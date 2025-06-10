@@ -9,7 +9,6 @@ import {
   StatusBar,
   RefreshControl,
   Pressable,
-  TouchableOpacity,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {
@@ -18,7 +17,6 @@ import {
 } from '@react-navigation/native-stack';
 
 // Components
-import {Header} from '../../commonComponents';
 import {FamilyInfo, MedicationCard, ProfileHeader} from './ProfileComponents';
 
 // Types and mock data

@@ -34,163 +34,35 @@ import CheckBox from '@react-native-community/checkbox';
 import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 import {parseError} from '@helpers';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import {
-  faFilePdf,
-  faFileWord,
-  faFileExcel,
-  faFileZipper,
-  faFileLines,
-  faFile,
-  faLocationDot,
-} from '@fortawesome/free-solid-svg-icons';
+import {faFile, faLocationDot} from '@fortawesome/free-solid-svg-icons';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from 'App';
 
+import {
+  BLOOD_GROUP_OPTIONS,
+  FILE_ICONS,
+  GENDER_OPTIONS,
+  HEALTH_ISSUES,
+  INITIAL_FORM_DATA,
+  PHOTO_OPTIONS,
+} from './constants';
+import {
+  FamilyMemberType,
+  FormData,
+  FormErrors,
+  HealthIssue,
+  LocationData,
+} from './types';
+import {prepareRegistrationPayload} from './helper';
+
 // Types
-type Gender = 'male' | 'female' | '';
-type FamilyMemberType = 'male' | 'female' | 'children';
-type HealthIssue =
-  | 'bloodPressure'
-  | 'diabetes'
-  | 'kidneyProblems'
-  | 'neurologicalProblems'
-  | 'cancer'
-  | 'other';
 type RegistrationFormNavigationProp = StackNavigationProp<
   RootStackParamList,
   'RegistrationForm'
 >;
 
-interface FormData {
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  mobileNumber: string;
-  bloodGroup: string;
-  gender: Gender;
-  dateOfBirth: Date;
-  age: string;
-  flatNumber: string;
-  blockNumber: string;
-  buildingNumber: string;
-  address: string;
-  email: string;
-  location: {
-    latitude: number | null;
-    longitude: number | null;
-  };
-  familyMembers: Record<FamilyMemberType, string>;
-  emergencyContacts: Array<{
-    name: string;
-    relationship: string;
-    phone: string;
-  }>;
-  prescription: {
-    uri: string;
-    name: string;
-    type: string;
-  }[];
-  healthIssues: Record<HealthIssue, boolean | string>;
-}
-
-interface FormErrors {
-  firstName?: string;
-  lastName?: string;
-  mobileNumber?: string;
-  gender?: string;
-  address?: string;
-  profilePic?: string;
-  familyMembers?: string;
-}
-
-interface LocationData {
-  address: string;
-  lat: number;
-  lng: number;
-}
-
 // Constants
-const GENDER_OPTIONS = [
-  {label: 'Male', value: 'male' as Gender},
-  {label: 'Female', value: 'female' as Gender},
-];
-
-const PHOTO_OPTIONS = [
-  {label: 'Take Photo', value: 'take', icon: '📷'},
-  {label: 'Upload Photo', value: 'upload', icon: '📁'},
-];
-
-const HEALTH_ISSUES = [
-  {id: 'bloodPressure' as HealthIssue, label: 'Blood Pressure'},
-  {id: 'diabetes' as HealthIssue, label: 'Diabetes'},
-  {id: 'kidneyProblems' as HealthIssue, label: 'Kidney problems'},
-  {id: 'neurologicalProblems' as HealthIssue, label: 'Neurological problems'},
-  {id: 'cancer' as HealthIssue, label: 'Cancer'},
-];
-
-const FILE_ICONS: Record<string, any> = {
-  pdf: faFilePdf,
-  msword: faFileWord,
-  wordprocessingml: faFileWord,
-  spreadsheetml: faFileExcel,
-  excel: faFileExcel,
-  zip: faFileZipper,
-  compressed: faFileZipper,
-  text: faFileLines,
-};
-
-const INITIAL_FORM_DATA: FormData = {
-  firstName: '',
-  lastName: '',
-  fullName: '',
-  mobileNumber: '',
-  gender: '',
-  bloodGroup: '',
-  dateOfBirth: new Date('2000-01-01'),
-  age: '',
-  flatNumber: '',
-  blockNumber: '',
-  buildingNumber: '',
-  address: '',
-  email: '',
-  location: {
-    latitude: null,
-    longitude: null,
-  },
-  familyMembers: {
-    male: '0',
-    female: '0',
-    children: '0',
-  },
-  emergencyContacts: [
-    {
-      name: '',
-      relationship: '',
-      phone: '',
-    },
-  ],
-  prescription: [],
-  healthIssues: {
-    bloodPressure: false,
-    diabetes: false,
-    kidneyProblems: false,
-    neurologicalProblems: false,
-    cancer: false,
-    other: '',
-  },
-};
-
-const BLOOD_GROUP_OPTIONS = [
-  {label: 'A+', value: 'A+'},
-  {label: 'A-', value: 'A-'},
-  {label: 'B+', value: 'B+'},
-  {label: 'B-', value: 'B-'},
-  {label: 'AB+', value: 'AB+'},
-  {label: 'AB-', value: 'AB-'},
-  {label: 'O+', value: 'O+'},
-  {label: 'O-', value: 'O-'},
-];
 
 const RegistrationForm = () => {
   // State
@@ -203,6 +75,7 @@ const RegistrationForm = () => {
   const [profilePicModalVisible, setProfilePicModalVisible] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [showBloodGroupPicker, setShowBloodGroupPicker] = useState(false);
+  const [isAgeManual, setIsAgeManual] = useState(false);
 
   const navigation = useNavigation<RegistrationFormNavigationProp>();
 
@@ -453,11 +326,38 @@ const RegistrationForm = () => {
   const handleDateChange = useCallback(
     (selectedDate: Date) => {
       setShowDatePicker(false);
-      updateField('dateOfBirth', selectedDate);
-      updateField('age', calculateAge(selectedDate));
+      setIsAgeManual(false);
+      setFormData(prev => ({
+        ...prev,
+        dateOfBirth: selectedDate,
+        age: calculateAge(selectedDate),
+      }));
     },
     [calculateAge],
   );
+
+  const handleAgeChange = (text: string) => {
+    const numericValue = text.replace(/[^0-9]/g, '');
+
+    setFormData(prev => ({
+      ...prev,
+      age: numericValue,
+    }));
+
+    if (numericValue.length > 0) {
+      setIsAgeManual(true);
+    } else {
+      setIsAgeManual(false);
+      if (formData.dateOfBirth) {
+        const age = calculateAge(formData.dateOfBirth);
+        setFormData(prev => ({
+          ...prev,
+          age: age.toString(),
+        }));
+      }
+    }
+  };
+
   const addEmergencyContact = useCallback(() => {
     setFormData(prev => ({
       ...prev,
@@ -532,11 +432,7 @@ const RegistrationForm = () => {
     if (validateForm()) {
       setIsSubmitting(true);
 
-      const submissionData = {
-        ...formData,
-        profilePic,
-        dateOfBirth: formData.dateOfBirth.toISOString().split('T')[0],
-      };
+      const submissionData = prepareRegistrationPayload(formData, profilePic);
 
       console.log('Submitting:', submissionData);
 
@@ -950,8 +846,14 @@ const RegistrationForm = () => {
                 ]}>
                 <Text style={styles.label}>Age</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    {
+                      maxHeight: 48,
+                    },
+                  ]}
                   value={formData.age}
+                  onChangeText={handleAgeChange}
                   placeholder="Age"
                   keyboardType="phone-pad"
                   placeholderTextColor="#aaa"

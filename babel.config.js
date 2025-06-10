@@ -33,7 +33,7 @@ module.exports = {
           '@screens/DynamicGridScreen':
             './src/components/screens/DynamicGridScreen',
           '@screens/RegistrationForm':
-            './src/components/screens/RegistrationForm',
+            './src/components/screens/RegistrationFormScreen',
           '@screens/HealthBook': './src/components/screens/HealthBook',
           '@screens/UserProfile': './src/components/screens/UserProfile',
           '@screens/EditScreen': './src/components/screens/EditScreen',
