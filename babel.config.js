@@ -37,6 +37,7 @@ module.exports = {
           '@screens/HealthBook': './src/components/screens/HealthBook',
           '@screens/UserProfile': './src/components/screens/UserProfile',
           '@screens/EditScreen': './src/components/screens/EditScreen',
+          '@screens/ReportsScreen': './src/components/screens/ReportsScreen',
           '@EntityHandlers': './src/components/EntityHandlers',
           '@commonComponents': './src/components/commonComponents',
           '@auth': './src/services/auth',

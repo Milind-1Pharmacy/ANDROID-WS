@@ -317,9 +317,11 @@ const ContactInfoItem = ({
 const HealthVitalsCard = ({
   userPersonalInfo,
   onReportsPress,
+  navigation,
 }: {
   userPersonalInfo: UserPersonalInfo;
   onReportsPress: () => void;
+  navigation: any;
 }) => (
   <View style={styles.healthVitalsCard}>
     <View style={styles.cardHeader}>
@@ -358,7 +360,9 @@ const HealthVitalsCard = ({
       />
     </View>
     <Pressable
-      onPress={onReportsPress}
+      onPress={() => {
+        navigation.navigate('ReportsScreen');
+      }}
       style={{
         paddingHorizontal: 16,
         paddingVertical: 8,
@@ -458,6 +462,7 @@ const ProfileComponent = ({
         <HealthVitalsCard
           userPersonalInfo={userPersonalInfo}
           onReportsPress={() => handleEditPress('healthParameters')}
+          navigation={navigation}
         />
       </View>
     </ScrollView>

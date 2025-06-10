@@ -13,10 +13,11 @@ import SupportScreen from './SupportScreen';
 import AddressForm from './AddressForm';
 import PrescriptionOrder from './PrescriptionOrder';
 import ItemsListing from './ItemsListing';
-import RegistrationForm from './RegistrationForm';
+import RegistrationForm from './RegistrationFormScreen';
 import HealthBook from './HealthBook';
 import UserProfile from './UserProfile';
 import EditScreen from './EditScreen';
+import ReportsScreen from './ReportsScreen';
 export {
   Home,
   LoginScreen,
@@ -37,4 +38,5 @@ export {
   HealthBook,
   UserProfile,
   EditScreen,
+  ReportsScreen,
 };

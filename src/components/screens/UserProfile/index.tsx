@@ -88,26 +88,44 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
         firstName: mockUserData.user.firstName,
         lastName: mockUserData.user.lastName,
         profilePic: mockUserData.user.profilePic,
-        email: mockUserData.user.email,
+        email: mockUserData.user?.email ?? '',
         mobileNumber: mockUserData.user.mobileNumber,
         gender: mockUserData.user.gender,
-        dateOfBirth: mockUserData.user.dateOfBirth,
-        age: mockUserData.user.age,
-        healthParameters: mockUserData.user.healthParameters,
+        dateOfBirth: mockUserData.user.dateOfBirth ?? '',
+        age: mockUserData.user.age ?? '',
+        healthParameters: mockUserData.user.healthParameters ?? {
+          height: '',
+          weight: '',
+          bloodPressure: '',
+          bloodSugar: '',
+          spo2: '',
+          bpPhoto: undefined,
+          glucometerPhoto: undefined,
+          pulseOximeterPhoto: undefined,
+        },
         address: mockUserData.user.address,
-        subscription: mockUserData.user.subscription,
-        prescription: mockUserData.user.prescription,
-        healthRecords: mockUserData.user.healthRecords,
+        subscription: mockUserData.user.subscription ?? {
+          plan: '',
+          startDate: '',
+          endDate: '',
+          status: '',
+        },
+        prescription: mockUserData.user.prescription ?? [],
+        healthRecords: mockUserData.user.healthRecords ?? [],
       });
 
       setUserFamilyInfo({
-        familyMembers: mockUserData.user.familyMembers,
-        emergencyContacts: mockUserData.user.emergencyContacts,
+        familyMembers: {
+          male: mockUserData.user.familyMembers?.male ?? '0',
+          female: mockUserData.user.familyMembers?.female ?? '0',
+          children: mockUserData.user.familyMembers?.children ?? '0',
+        },
+        emergencyContacts: mockUserData.user.emergencyContacts ?? [],
       });
 
       setUserHealthDetails({
         healthIssues: mockUserData.user.healthIssues,
-        currentMedications: mockUserData.user.currentMedications,
+        currentMedications: mockUserData.user.currentMedications ?? [],
       });
     } catch (error) {
       console.error('Error fetching user profile:', error);

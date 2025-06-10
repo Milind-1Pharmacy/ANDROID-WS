@@ -250,6 +250,7 @@ const RegistrationForm = React.lazy(() => import('@screens/RegistrationForm'));
 const HealthBook = React.lazy(() => import('@screens/HealthBook'));
 const UserProfile = React.lazy(() => import('@screens/UserProfile'));
 const EditScreen = React.lazy(() => import('@screens/EditScreen'));
+const ReportsScreen = React.lazy(() => import('@screens/ReportsScreen'));
 export type RootStackParamList = {
   Home: {initialTab: string} | undefined;
   Login: undefined;
@@ -281,9 +282,10 @@ export type RootStackParamList = {
   Support: undefined;
   EditScreen: {
     section?: SectionKey;
-    userId : string,
-    initialData : any
+    userId: string;
+    initialData: any;
   };
+  ReportsScreen: undefined;
 };
 
 const linkingConfig = () => {
@@ -321,6 +323,7 @@ const linkingConfig = () => {
           HealthBook: `health_book`,
           UserProfile: `user_profile/:userId/`,
           EditScreen: `edit_screen`,
+          ReportsScreen: `reports_screen`,
         },
       },
     },
@@ -350,6 +353,7 @@ type RouteDefinition = {
     | React.FC<NativeStackScreenProps<RootStackParamList, 'HealthBook'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'UserProfile'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'EditScreen'>>
+    | React.FC<NativeStackScreenProps<RootStackParamList, 'ReportsScreen'>>
     | undefined;
 };
 const AppNavigator = memo(() => {
@@ -384,6 +388,7 @@ const AppNavigator = memo(() => {
       {name: 'Support', component: SupportScreen},
       {name: 'UserProfile', component: UserProfile},
       {name: 'EditScreen', component: EditScreen},
+      {name: 'ReportsScreen', component: ReportsScreen},
     ],
     [],
   );

@@ -20,32 +20,32 @@ export interface UserProfileInterface {
     firstName: string;
     lastName: string;
     fullName: string;
-    email: string;
+    email?: string;
     mobileNumber: string;
     gender: string;
-    dateOfBirth: string;
-    age: string;
-    registrationDate: string;
-    lastUpdated: string;
-    subscription: {
+    dateOfBirth?: string;
+    age?: string;
+    registrationDate?: string;
+    lastUpdated?: string;
+    subscription?: {
       plan: string;
       startDate: string;
       endDate: string;
       status: string;
     };
-    flatNumber: string;
-    blockNumber: string;
-    buildingNumber: string;
+    flatNumber?: string;
+    blockNumber?: string;
+    buildingNumber?: string;
     address: string;
-    location: {
+    location?: {
       latitude: number;
       longitude: number;
     };
 
     familyMembers: {
-      male: string;
-      female: string;
-      children: string;
+      male?: string;
+      female?: string;
+      children?: string;
     };
 
     healthIssues: {
@@ -57,7 +57,7 @@ export interface UserProfileInterface {
       other: string;
     };
 
-    currentMedications: Array<{
+    currentMedications?: Array<{
       id: string;
       name: string;
       dosage: string;
@@ -71,7 +71,7 @@ export interface UserProfileInterface {
       photo?: any;
     }>;
 
-    healthParameters: {
+    healthParameters?: {
       height: string;
       weight: string;
       bloodPressure: string;
@@ -109,8 +109,8 @@ export interface UserProfileInterface {
       profileCompleteness: number;
       lastHealthUpdateDaysAgo: number;
     };
-    prescription: Array<any>;
-    healthRecords: Array<any>;
+    prescription?: Array<any>;
+    healthRecords?: Array<any>;
   };
 }
 
@@ -131,6 +131,9 @@ export interface userPersonalInfoInterface {
     bloodPressure: string;
     bloodSugar: string;
     spo2: string;
+    bpPhoto?: any;
+    glucometerPhoto?: any;
+    pulseOximeterPhoto?: any;
   };
   subscription: {
     plan: string;
