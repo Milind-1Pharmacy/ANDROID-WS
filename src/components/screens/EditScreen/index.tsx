@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   ScrollView,
@@ -64,6 +64,34 @@ const EditScreen = () => {
     useState<SectionKey>(defaultSection);
 
   const SelectedComponent = EDIT_SECTIONS[selectedSection].component;
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const chipRefs = useRef<{[key in SectionKey]: View | null}>({} as any);
+
+  useEffect(() => {
+    if (selectedSection && scrollViewRef.current) {
+      requestAnimationFrame(() => {
+        chipRefs.current[selectedSection]?.measureLayout(
+          scrollViewRef.current?.getInnerViewNode(),
+          (x, y, width, height) => {
+            const screenWidth = Dimensions.get('window').width;
+            const scrollToX = x - screenWidth / 2 + width / 2;
+
+            scrollViewRef.current?.scrollTo({
+              x: scrollToX,
+              animated: true,
+            });
+          },
+          () => {
+            scrollViewRef.current?.scrollTo({
+              x: 0,
+              animated: true,
+            });
+          },
+        );
+      });
+    }
+  }, [selectedSection]);
 
   const getSectionData = (section: SectionKey) => {
     if (!initialData) return {};
@@ -179,6 +207,7 @@ const EditScreen = () => {
         </Text>
       </View>
       <ScrollView
+        ref={scrollViewRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{
@@ -197,6 +226,7 @@ const EditScreen = () => {
         {sectionKeys.map(key => (
           <Pressable
             key={key}
+            ref={ref => (chipRefs.current[key] = ref)}
             onPress={() => setSelectedSection(key)}
             accessibilityRole="button"
             accessibilityLabel={`Edit ${EDIT_SECTIONS[key].label}`}
