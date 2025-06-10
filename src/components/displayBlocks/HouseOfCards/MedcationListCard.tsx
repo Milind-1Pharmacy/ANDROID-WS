@@ -16,7 +16,11 @@ import {
   faRupeeSign,
   faPlus,
 } from '@fortawesome/free-solid-svg-icons';
-import {TABLET_CAPSULE_IMAGE_FALLBACK, RUPEE_SYMBOL} from '@Constants';
+import {
+  TABLET_CAPSULE_IMAGE_FALLBACK,
+  RUPEE_SYMBOL,
+  SectionKey,
+} from '@Constants';
 
 interface Medication {
   id: string;
@@ -31,7 +35,7 @@ interface Medication {
 
 interface MedicationListProps {
   medication?: Medication;
-  onPress?: () => void;
+  onPress?: any;
   isAddCard?: boolean;
   isEmptyState?: boolean;
 }
@@ -43,6 +47,8 @@ const MedicationListCard: React.FC<MedicationListProps> = ({
   isEmptyState = false,
 }) => {
   if (isAddCard) {
+    console.log('isAddCard');
+
     return (
       <TouchableOpacity
         style={[styles.addCard]}

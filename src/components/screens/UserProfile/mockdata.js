@@ -6,7 +6,7 @@ export default mockData = {
     lastName: 'Kumar',
     fullName: 'Rajesh Kumar',
     email: 'rajesh.kumar@email.com',
-    mobileNumber: '+91 9876543210',
+    mobileNumber: '9876543210',
     subscription: {
       plan: 'Premium',
       startDate: '2023-01-01',
@@ -87,6 +87,9 @@ export default mockData = {
       bloodPressure: '135/88',
       bloodSugar: '145',
       spo2: '97',
+      bpPhoto: null,
+      glucometerPhoto: null,
+      pulseOximeterPhoto: null,
     },
     emergencyContacts: [
       {
@@ -94,12 +97,14 @@ export default mockData = {
         relationship: 'Spouse',
         phone: '+91 9876543211',
       },
-      {
-        name: 'Dr. Ramesh Sharma',
-        relationship: 'Family Doctor',
-        phone: '+91 9876543212',
-      },
+      // {
+      //   name: 'Dr. Ramesh Sharma',
+      //   relationship: 'Family Doctor',
+      //   phone: '+91 9876543212',
+      // },
     ],
+    prescription: [],
+    healthRecords: [],
     preferences: {
       language: 'english',
       notifications: {

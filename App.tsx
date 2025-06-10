@@ -139,6 +139,7 @@ import notifee from '@notifee/react-native';
 // import {debounce} from 'lodash';
 import {useContextSelector} from 'use-context-selector';
 import {Alert, Platform} from 'react-native';
+import {SectionKey} from '@Constants';
 library.add(
   faPills,
   faFileInvoiceDollar,
@@ -248,6 +249,7 @@ const DynamicGridScreen = React.lazy(
 const RegistrationForm = React.lazy(() => import('@screens/RegistrationForm'));
 const HealthBook = React.lazy(() => import('@screens/HealthBook'));
 const UserProfile = React.lazy(() => import('@screens/UserProfile'));
+const EditScreen = React.lazy(() => import('@screens/EditScreen'));
 export type RootStackParamList = {
   Home: {initialTab: string} | undefined;
   Login: undefined;
@@ -277,6 +279,11 @@ export type RootStackParamList = {
   };
   AddressForm: undefined;
   Support: undefined;
+  EditScreen: {
+    section?: SectionKey;
+    userId : string,
+    initialData : any
+  };
 };
 
 const linkingConfig = () => {
@@ -312,7 +319,8 @@ const linkingConfig = () => {
           Support: `support`,
           RegistrationForm: `registration_details`,
           HealthBook: `health_book`,
-          UserProfile: `user_profile`,
+          UserProfile: `user_profile/:userId/`,
+          EditScreen: `edit_screen`,
         },
       },
     },
@@ -341,6 +349,7 @@ type RouteDefinition = {
     | React.FC<NativeStackScreenProps<RootStackParamList, 'RegistrationForm'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'HealthBook'>>
     | React.FC<NativeStackScreenProps<RootStackParamList, 'UserProfile'>>
+    | React.FC<NativeStackScreenProps<RootStackParamList, 'EditScreen'>>
     | undefined;
 };
 const AppNavigator = memo(() => {
@@ -374,6 +383,7 @@ const AppNavigator = memo(() => {
       {name: 'HealthBook', component: HealthBook},
       {name: 'Support', component: SupportScreen},
       {name: 'UserProfile', component: UserProfile},
+      {name: 'EditScreen', component: EditScreen},
     ],
     [],
   );

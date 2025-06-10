@@ -1,5 +1,5 @@
 // src/components/screens/UserProfile/index.tsx
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 
 // Components
 import {Header} from '../../commonComponents';
@@ -22,6 +25,7 @@ import {FamilyInfo, MedicationCard, ProfileHeader} from './ProfileComponents';
 import {RootStackParamList} from 'App';
 import mockdata from './mockdata';
 import {
+  completeUserData,
   userFamilyInfoInterface,
   userHealthDetailsInterface,
   userPersonalInfoInterface,
@@ -29,6 +33,8 @@ import {
 } from './types';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faArrowLeftLong, faSquarePen} from '@fortawesome/free-solid-svg-icons';
+import {SectionKey} from '@Constants';
+import {AuthContext} from '@contextProviders';
 
 type UserProfileProps = NativeStackScreenProps<
   RootStackParamList,
@@ -49,10 +55,12 @@ type UserProfileProps = NativeStackScreenProps<
  * - Emergency contacts
  */
 const UserProfile: React.FC<UserProfileProps> = ({route}) => {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const userId = route.params?.userId || 'defaultUserId'; // Default userId if not provided
-
+  const {storeId} = useContext(AuthContext);
   // State management
+  const [userData, setUserData] = useState<completeUserData | null>(null);
   const [userPersonalInfo, setUserPersonalInfo] =
     useState<userPersonalInfoInterface | null>(null);
   const [userFamilyInfo, setUserFamilyInfo] =
@@ -75,6 +83,7 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      setUserData(mockUserData.user);
       // Set user data from mock
       setUserPersonalInfo({
         fullName: mockUserData.user.fullName,
@@ -89,6 +98,8 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
         healthParameters: mockUserData.user.healthParameters,
         address: mockUserData.user.address,
         subscription: mockUserData.user.subscription,
+        prescription: mockUserData.user.prescription,
+        healthRecords: mockUserData.user.healthRecords,
       });
 
       setUserFamilyInfo({
@@ -130,6 +141,16 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
     );
   }
 
+  console.log('++++++', userData, 'userData');
+
+  const handleEditPress = (section: SectionKey) => {
+    navigation.navigate('EditScreen', {
+      section, // e.g., 'personalDetails'
+      initialData: userData, // Pass COMPLETE data
+      userId,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#c9eaff" barStyle="dark-content" />
@@ -139,35 +160,31 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <View
-          style={{
-            backgroundColor: '#c9eaff',
-            padding: 20,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-          }}>
-          <Pressable onPress={() => navigation.goBack()}>
-            <FontAwesomeIcon
-              icon={faArrowLeftLong}
-              size={16}
-              style={{color: '#000000', marginLeft: 8}}
-            />
-          </Pressable>
-          <TouchableOpacity onPress={() => {}} style={styles.editButton}>
-            <FontAwesomeIcon
-              icon={faSquarePen}
-              size={12}
-              style={styles.editIcon}
-            />
-            <Text style={styles.editText}>Edit</Text>
-          </TouchableOpacity>
-        </View>
+        {!userPersonalInfo && (
+          <View
+            style={{
+              backgroundColor: '#c9eaff',
+              padding: 20,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}>
+            <Pressable onPress={() => navigation.goBack()}>
+              <FontAwesomeIcon
+                icon={faArrowLeftLong}
+                size={16}
+                style={{color: '#000000', marginLeft: 8}}
+              />
+            </Pressable>
+          </View>
+        )}
         {/* Profile header with user info */}
 
         {userPersonalInfo && (
           <ProfileHeader
             navigation={navigation}
             userPersonalInfo={userPersonalInfo}
+            userId={userId}
+            handleEditPress={handleEditPress}
           />
         )}
 
@@ -176,6 +193,10 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
           <MedicationCard
             healthIssues={userHealthDetails.healthIssues}
             currentMedications={userHealthDetails.currentMedications}
+            navigation={navigation}
+            userId={userId}
+            storeId={storeId ?? undefined}
+            handleEditPress={handleEditPress}
           />
         )}
 
@@ -184,6 +205,9 @@ const UserProfile: React.FC<UserProfileProps> = ({route}) => {
           <FamilyInfo
             familyMembers={userFamilyInfo.familyMembers}
             emergencyContacts={userFamilyInfo.emergencyContacts}
+            navigation={navigation}
+            userId={userId}
+            handleEditPress={handleEditPress}
           />
         )}
       </ScrollView>

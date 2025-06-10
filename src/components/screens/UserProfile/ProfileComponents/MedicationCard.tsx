@@ -10,6 +10,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faShieldAlt, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {MedicationListCard} from '@HouseOfCards';
 import {userHealthDetailsInterface} from '../types';
+import {SectionKey} from '@Constants';
 
 // Constants
 const COLORS = {
@@ -128,15 +129,13 @@ const EmptyHealthState = ({onAddPress}: {onAddPress: () => void}) => (
 const MedicationCard: React.FC<userHealthDetailsInterface> = ({
   healthIssues,
   currentMedications,
+  handleEditPress,
 }) => {
   const activeHealthIssues = getActiveHealthIssues(healthIssues);
 
-  const handleAddMedication = () => {
+  const handleAddMedication = (section: SectionKey) => {
     console.log('Add medication pressed');
-  };
-
-  const handleAddCondition = () => {
-    console.log('Add condition pressed');
+    handleEditPress?.(section);
   };
 
   return (
@@ -163,13 +162,20 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
                       ? parseFloat(medication.mrp)
                       : undefined,
                   }}
-                  onPress={() => console.log('Card pressed', medication.id)}
+                  onPress={() => () =>
+                    console.log('Card pressed', medication.id)}
                 />
               ))}
-              <MedicationListCard isAddCard onPress={handleAddMedication} />
+              <MedicationListCard
+                isAddCard
+                onPress={() => handleAddMedication('addMedication')}
+              />
             </>
           ) : (
-            <MedicationListCard isEmptyState onPress={handleAddMedication} />
+            <MedicationListCard
+              isEmptyState
+              onPress={() => handleAddMedication('addMedication')}
+            />
           )}
         </ScrollView>
       </View>
@@ -197,7 +203,9 @@ const MedicationCard: React.FC<userHealthDetailsInterface> = ({
             ))}
           </ScrollView>
         ) : (
-          <EmptyHealthState onAddPress={handleAddCondition} />
+          <EmptyHealthState
+            onAddPress={() => handleAddMedication('addMedication')}
+          />
         )}
       </View>
     </View>

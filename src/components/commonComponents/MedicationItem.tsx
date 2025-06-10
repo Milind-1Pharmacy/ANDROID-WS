@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {
   Alert,
+  Linking,
   PermissionsAndroid,
   Platform,
   TouchableOpacity,
@@ -131,22 +132,56 @@ const MedicationItem: React.FC<MedicationItemProps> = React.memo(
       try {
         // 1. Check and request permissions
         if (Platform.OS === 'android') {
-          const granted = await PermissionsAndroid.requestMultiple([
+          // Check if we already have permissions
+          const hasCameraPermission = await PermissionsAndroid.check(
             PermissionsAndroid.PERMISSIONS.CAMERA,
-            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          ]);
+          );
+          const hasStoragePermission = await PermissionsAndroid.check(
+            Platform.Version >= 33
+              ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+              : PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          );
 
-          if (
-            granted['android.permission.CAMERA'] !==
-              PermissionsAndroid.RESULTS.GRANTED ||
-            granted['android.permission.WRITE_EXTERNAL_STORAGE'] !==
-              PermissionsAndroid.RESULTS.GRANTED
-          ) {
-            Alert.alert(
-              'Permissions required',
-              'Camera and storage permissions are needed',
+          // If we don't have permissions, request them
+          if (!hasCameraPermission || !hasStoragePermission) {
+            const permissionsToRequest: any = [];
+            if (!hasCameraPermission) {
+              permissionsToRequest.push(PermissionsAndroid.PERMISSIONS.CAMERA);
+            }
+            if (!hasStoragePermission) {
+              permissionsToRequest.push(
+                Platform.Version >= 33
+                  ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+                  : PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+              );
+            }
+
+            const granted = await PermissionsAndroid.requestMultiple(
+              permissionsToRequest,
             );
-            return;
+
+            // Check if all requested permissions were granted
+            const allGranted = Object.values(granted).every(
+              result => result === PermissionsAndroid.RESULTS.GRANTED,
+            );
+
+            if (!allGranted) {
+              Alert.alert(
+                'Permissions required',
+                'Camera and storage permissions are needed to take photos',
+                [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'Open Settings',
+                    onPress: () => Linking.openSettings(),
+                  },
+                ],
+              );
+              return;
+            }
           }
         }
 
@@ -159,16 +194,15 @@ const MedicationItem: React.FC<MedicationItemProps> = React.memo(
           includeBase64: false,
           presentationStyle: 'fullScreen',
           durationLimit: 30,
-          maxWidth: 1024, // Limits image size
+          maxWidth: 1024,
           maxHeight: 1024,
         };
 
-        // 3. Launch camera with error boundary
+        // 3. Launch camera
         const result = await launchCamera(options);
 
-        // 4. Handle activity recreation on Xiaomi
+        // Handle Xiaomi/Redmi specific issues
         if (Platform.OS === 'android' && !result?.assets) {
-          // Workaround for Xiaomi devices that kill the activity
           await new Promise(resolve => setTimeout(resolve, 500));
           if (!result?.assets) {
             throw new Error('Camera activity was destroyed');
@@ -182,7 +216,7 @@ const MedicationItem: React.FC<MedicationItemProps> = React.memo(
 
         if (result.errorCode) {
           console.error('Camera Error:', result.errorMessage);
-          Alert.alert('Error', 'Failed to take photo');
+          Alert.alert('Error', result.errorMessage || 'Failed to take photo');
           return;
         }
 
@@ -198,22 +232,23 @@ const MedicationItem: React.FC<MedicationItemProps> = React.memo(
           fileSize: result.assets[0].fileSize || 0,
         };
 
-        // Update the medication with the new photo
         onUpdateMedication({
           id: item.id,
           field: 'photo',
           value: photo,
         });
-
-        Alert.alert('Success', 'Photo captured successfully');
       } catch (error) {
         console.error('Camera error:', error);
-        Alert.alert('Error', 'Failed to capture photo. Please try again.');
+        Alert.alert(
+          'Error',
+          'Failed to capture photo. Please try again.',
+          [{text: 'OK', onPress: () => console.log('OK Pressed')}],
+          {cancelable: false},
+        );
       } finally {
         setIsCameraLoading(false);
       }
     };
-
     return (
       <Box
         p={4}

@@ -13,11 +13,26 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {userFamilyInfoInterface} from '../types';
 import {TouchableOpacity} from 'react-native';
+import {SectionKey} from '@Constants';
 
 const FamilyInfo = ({
   familyMembers,
   emergencyContacts,
+  navigation,
+  userId,
+  handleEditPress,
 }: userFamilyInfoInterface) => {
+  const getSectionData = (section: SectionKey) => {
+    switch (section) {
+      case 'familyMembers':
+        return familyMembers;
+      case 'emergencyContacts':
+        return emergencyContacts;
+    }
+  };
+
+  console.log(getSectionData('emergencyContacts'));
+
   return (
     <View style={styles.container}>
       {/* Family Members Section */}
@@ -92,7 +107,9 @@ const FamilyInfo = ({
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Emergency Contacts</Text>
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => {
+              handleEditPress?.('emergencyContacts');
+            }}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
